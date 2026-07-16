@@ -28,9 +28,9 @@ export function activate(context: vscode.ExtensionContext) {
             treeView.message = '扫描中...';
             const config = vscode.workspace.getConfiguration('csharpsolution');
             const excludes = config.get<string[]>('excludePatterns', []);
-            const projects = await ProjectDiscovery.scan(excludes);
-            treeProvider.refresh(projects);
-            treeView.message = projects.length === 0 ? '未发现 C# 项目' : undefined;
+            const result = await ProjectDiscovery.scan(excludes);
+            treeProvider.refresh(result.allProjects);
+            treeView.message = result.allProjects.length === 0 ? '未发现 C# 项目' : undefined;
         })
     );
 

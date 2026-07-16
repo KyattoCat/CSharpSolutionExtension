@@ -57,6 +57,8 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
                 );
             case 'file':
                 return this.fileTreeItem(node.compile, node.projectPath);
+            default:
+                return new vscode.TreeItem('unknown', vscode.TreeItemCollapsibleState.None);
         }
     }
 
