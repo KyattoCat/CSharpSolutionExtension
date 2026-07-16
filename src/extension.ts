@@ -401,10 +401,10 @@ export function activate(context: vscode.ExtensionContext) {
     slnxWatcher.onDidDelete(debouncedRefresh);
     context.subscriptions.push(slnxWatcher);
 
-    // --- 切换标签页时自动选中对应文件节点 ---
+    // --- 切换标签页时自动选中对应文件节点（仅面板可见时生效） ---
     context.subscriptions.push(
         vscode.window.onDidChangeActiveTextEditor(editor => {
-            if (editor?.document.uri.scheme === 'file') {
+            if (editor?.document.uri.scheme === 'file' && treeView.visible) {
                 const node = treeProvider.findNodeByUri(editor.document.uri);
                 if (node) {
                     treeView.reveal(node, { select: true, focus: false, expand: true });
