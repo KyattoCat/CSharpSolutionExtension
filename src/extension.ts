@@ -6,6 +6,7 @@ import { CsprojService } from './services/CsprojService';
 import { FileTemplateService } from './services/FileTemplateService';
 import { FileService } from './services/FileService';
 import { BuildService } from './services/BuildService';
+import { SlnService } from './services/SlnService';
 import { ProjectNode } from './models/ProjectNode';
 import * as path from 'path';
 
@@ -201,6 +202,102 @@ export function activate(context: vscode.ExtensionContext) {
             const targetName = node.type === 'solution' ? node.solution.name : node.project.name;
             await BuildService.rebuild(targetPath, targetName);
             vscode.commands.executeCommand('csharpsolution.refresh');
+        })
+    );
+
+    // --- 添加已有项目到解决方案 ---
+    context.subscriptions.push(
+        vscode.commands.registerCommand('csharpsolution.addExistingProject', async (node: ProjectNode) => {
+            if (!node || node.type !== 'solution') return;
+
+            const files = await vscode.window.showOpenDialog({
+                canSelectMany: false,
+                openLabel: '选择项目文件',
+                filters: { 'C# 项目': ['csproj'] },
+            });
+
+            if (!files || files.length === 0) return;
+
+            try {
+                await SlnService.addProject(node.solution.path, files[0].fsPath);
+                vscode.window.showInformationMessage(`已添加: ${path.basename(files[0].fsPath)}`);
+                vscode.commands.executeCommand('csharpsolution.refresh');
+            } catch (err) {
+                vscode.window.showErrorMessage(
+                    `添加失败: ${err instanceof Error ? err.message : String(err)}`
+                );
+            }
+        })
+    );
+
+    // --- 添加新项目到解决方案 ---
+    context.subscriptions.push(
+        vscode.commands.registerCommand('csharpsolution.addNewProject', async (node: ProjectNode) => {
+            if (!node || node.type !== 'solution') return;
+
+            const templates = await SlnService.getTemplates();
+            const templateChoice = await vscode.window.showQuickPick(
+                templates.map(t => ({ label: t.label, description: t.description, id: t.id })),
+                { placeHolder: '选择项目模板' }
+            );
+            if (!templateChoice) return;
+
+            const projectName = await vscode.window.showInputBox({
+                prompt: '请输入项目名称',
+                placeHolder: 'MyNewProject',
+                validateInput: (value) => {
+                    if (!value.trim()) return '项目名不能为空';
+                    if (!/^[a-zA-Z_][a-zA-Z0-9_.]*$/.test(value)) return '项目名包含非法字符';
+                    return null;
+                },
+            });
+            if (!projectName) return;
+
+            try {
+                const slnDir = path.dirname(node.solution.path);
+                await SlnService.createProject(node.solution.path, slnDir, templateChoice.id, projectName);
+                vscode.window.showInformationMessage(`已创建项目: ${projectName}`);
+                vscode.commands.executeCommand('csharpsolution.refresh');
+            } catch (err) {
+                vscode.window.showErrorMessage(
+                    `创建失败: ${err instanceof Error ? err.message : String(err)}`
+                );
+            }
+        })
+    );
+
+    // --- 从解决方案移除项目 ---
+    context.subscriptions.push(
+        vscode.commands.registerCommand('csharpsolution.removeProjectFromSolution', async (node: ProjectNode) => {
+            if (!node || node.type !== 'project' || !node.solutionPath) return;
+
+            const slnPath = node.solutionPath;
+            const projectPath = node.project.path;
+
+            const choice = await vscode.window.showWarningMessage(
+                `从解决方案中移除 "${node.project.name}"？`,
+                { modal: true },
+                '仅移除引用',
+                '移除并删除文件'
+            );
+
+            if (!choice) return;
+
+            try {
+                await SlnService.removeProject(slnPath, projectPath);
+                vscode.window.showInformationMessage(`已从解决方案移除: ${node.project.name}`);
+
+                if (choice === '移除并删除文件') {
+                    const fileUri = vscode.Uri.file(projectPath);
+                    await vscode.workspace.fs.delete(fileUri, { useTrash: true });
+                }
+
+                vscode.commands.executeCommand('csharpsolution.refresh');
+            } catch (err) {
+                vscode.window.showErrorMessage(
+                    `移除失败: ${err instanceof Error ? err.message : String(err)}`
+                );
+            }
         })
     );
 

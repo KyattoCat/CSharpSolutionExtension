@@ -25,7 +25,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
     getTreeItem(node: ProjectNode): vscode.TreeItem {
         switch (node.type) {
             case 'project':
-                return this.projectTreeItem(node.project);
+                return this.projectTreeItem(node.project, !!node.solutionPath);
             case 'solution':
                 return this.solutionTreeItem(node.solution);
             case 'refGroup':
@@ -113,15 +113,15 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
 
     private getSolutionChildren(solution: Solution): ProjectNode[] {
         const projects = ProjectDiscovery.findProjectsForSolution(solution, this.allProjects);
-        return projects.map(p => ({ type: 'project' as const, project: p }));
+        return projects.map(p => ({ type: 'project' as const, project: p, solutionPath: solution.path }));
     }
 
-    private projectTreeItem(project: CsprojProject): vscode.TreeItem {
+    private projectTreeItem(project: CsprojProject, isSolutionChild?: boolean): vscode.TreeItem {
         const item = new vscode.TreeItem(
             `📦 ${project.name}`,
             vscode.TreeItemCollapsibleState.Expanded
         );
-        item.contextValue = 'project';
+        item.contextValue = isSolutionChild ? 'solutionProject' : 'project';
         item.tooltip = project.path;
         item.description = this.relativePath(project.path);
         return item;

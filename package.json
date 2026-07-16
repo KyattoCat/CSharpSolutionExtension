@@ -70,6 +70,18 @@
       {
         "command": "csharpsolution.rebuild",
         "title": "重新生成"
+      },
+      {
+        "command": "csharpsolution.addNewProject",
+        "title": "添加新项目..."
+      },
+      {
+        "command": "csharpsolution.addExistingProject",
+        "title": "添加已有项目..."
+      },
+      {
+        "command": "csharpsolution.removeProjectFromSolution",
+        "title": "从解决方案移除"
       }
     ],
     "menus": {
@@ -140,6 +152,21 @@
           "command": "csharpsolution.rebuild",
           "when": "view == csharpsolution-projects && viewItem == solution",
           "group": "group2@3"
+        },
+        {
+          "command": "csharpsolution.addNewProject",
+          "when": "view == csharpsolution-projects && viewItem == solution",
+          "group": "group1@1"
+        },
+        {
+          "command": "csharpsolution.addExistingProject",
+          "when": "view == csharpsolution-projects && viewItem == solution",
+          "group": "group1@2"
+        },
+        {
+          "command": "csharpsolution.removeProjectFromSolution",
+          "when": "view == csharpsolution-projects && viewItem == solutionProject",
+          "group": "group3@1"
         }
       ]
     },

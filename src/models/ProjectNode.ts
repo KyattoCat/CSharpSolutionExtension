@@ -2,7 +2,7 @@ import { CsprojProject, CompileItem, ReferenceItem, ProjectReferenceItem, Packag
 
 /** 树节点联合类型 —— 每种节点携带自身所需数据 */
 export type ProjectNode =
-    | { type: 'project'; project: CsprojProject }
+    | { type: 'project'; project: CsprojProject; solutionPath?: string }
     | { type: 'refGroup'; projectPath: string }
     | { type: 'refSubGroup'; label: string; projectPath: string }
     | { type: 'reference'; item: ReferenceItem; projectPath: string }
