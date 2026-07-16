@@ -74,10 +74,10 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
     getChildren(node?: ProjectNode): ProjectNode[] | undefined {
         if (!node) {
             const children: ProjectNode[] = [];
-            for (const s of this.solutions) {
+            for (const s of this.solutions.sort((a, b) => a.name.localeCompare(b.name))) {
                 children.push({ type: 'solution' as const, solution: s });
             }
-            for (const p of this.standaloneProjects) {
+            for (const p of this.standaloneProjects.sort((a, b) => a.name.localeCompare(b.name))) {
                 children.push({ type: 'project' as const, project: p });
             }
             if (children.length === 0) return undefined;
@@ -116,6 +116,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
 
     private getSolutionChildren(solution: Solution): ProjectNode[] {
         const projects = ProjectDiscovery.findProjectsForSolution(solution, this.allProjects);
+        projects.sort((a, b) => a.name.localeCompare(b.name));
         return projects.map(p => ({ type: 'project' as const, project: p, solutionPath: solution.path }));
     }
 
@@ -188,6 +189,14 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
         }
 
         const folderMap = this.buildFolderTree(project.compiles, project.path);
+        // Sort: folders first (by name), then files (by name)
+        folderMap.sort((a, b) => {
+            if (a.type === 'folder' && b.type === 'file') return -1;
+            if (a.type === 'file' && b.type === 'folder') return 1;
+            if (a.type === 'folder' && b.type === 'folder') return a.relPath.localeCompare(b.relPath);
+            if (a.type === 'file' && b.type === 'file') return a.compile.include.localeCompare(b.compile.include);
+            return 0;
+        });
         children.push(...folderMap);
 
         return children;
@@ -221,21 +230,21 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
 
         switch (node.label) {
             case '项目引用':
-                return project.projectReferences.map(item => ({
-                    type: 'projectRef' as const, item, projectPath: node.projectPath,
-                }));
+                return project.projectReferences
+                    .sort((a, b) => a.include.localeCompare(b.include))
+                    .map(item => ({ type: 'projectRef' as const, item, projectPath: node.projectPath }));
             case '程序集引用':
-                return project.references.map(item => ({
-                    type: 'reference' as const, item, projectPath: node.projectPath,
-                }));
+                return project.references
+                    .sort((a, b) => a.include.localeCompare(b.include))
+                    .map(item => ({ type: 'reference' as const, item, projectPath: node.projectPath }));
             case 'NuGet 包':
-                return project.packages.map(item => ({
-                    type: 'package' as const, item, projectPath: node.projectPath,
-                }));
+                return project.packages
+                    .sort((a, b) => a.id.localeCompare(b.id))
+                    .map(item => ({ type: 'package' as const, item, projectPath: node.projectPath }));
             case '分析器':
-                return project.analyzers.map(item => ({
-                    type: 'analyzer' as const, item, projectPath: node.projectPath,
-                }));
+                return project.analyzers
+                    .sort((a, b) => a.include.localeCompare(b.include))
+                    .map(item => ({ type: 'analyzer' as const, item, projectPath: node.projectPath }));
             default:
                 return [];
         }
@@ -308,10 +317,12 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
 
         const result: ProjectNode[] = [];
 
-        for (const subFolder of subFolders) {
+        const sortedSubFolders = [...subFolders].sort((a, b) => a.localeCompare(b));
+        for (const subFolder of sortedSubFolders) {
             result.push({ type: 'folder', relPath: subFolder, projectPath: node.projectPath });
         }
 
+        directFiles.sort((a, b) => a.include.localeCompare(b.include));
         for (const compile of directFiles) {
             result.push({ type: 'file', compile, projectPath: node.projectPath });
         }
