@@ -125,6 +125,21 @@
           "command": "csharpsolution.rebuild",
           "when": "view == csharpsolution-projects && viewItem == project",
           "group": "group2@3"
+        },
+        {
+          "command": "csharpsolution.build",
+          "when": "view == csharpsolution-projects && viewItem == solution",
+          "group": "group2@1"
+        },
+        {
+          "command": "csharpsolution.clean",
+          "when": "view == csharpsolution-projects && viewItem == solution",
+          "group": "group2@2"
+        },
+        {
+          "command": "csharpsolution.rebuild",
+          "when": "view == csharpsolution-projects && viewItem == solution",
+          "group": "group2@3"
         }
       ]
     },

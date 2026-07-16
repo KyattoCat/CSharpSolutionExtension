@@ -174,8 +174,10 @@ export function activate(context: vscode.ExtensionContext) {
     // --- 生成 ---
     context.subscriptions.push(
         vscode.commands.registerCommand('csharpsolution.build', async (node: ProjectNode) => {
-            if (!node || node.type !== 'project') return;
-            await BuildService.build(node.project.path, node.project.name);
+            if (!node || (node.type !== 'project' && node.type !== 'solution')) return;
+            const targetPath = node.type === 'solution' ? node.solution.path : node.project.path;
+            const targetName = node.type === 'solution' ? node.solution.name : node.project.name;
+            await BuildService.build(targetPath, targetName);
             vscode.commands.executeCommand('csharpsolution.refresh');
         })
     );
@@ -183,8 +185,10 @@ export function activate(context: vscode.ExtensionContext) {
     // --- 清理 ---
     context.subscriptions.push(
         vscode.commands.registerCommand('csharpsolution.clean', async (node: ProjectNode) => {
-            if (!node || node.type !== 'project') return;
-            await BuildService.clean(node.project.path, node.project.name);
+            if (!node || (node.type !== 'project' && node.type !== 'solution')) return;
+            const targetPath = node.type === 'solution' ? node.solution.path : node.project.path;
+            const targetName = node.type === 'solution' ? node.solution.name : node.project.name;
+            await BuildService.clean(targetPath, targetName);
             vscode.commands.executeCommand('csharpsolution.refresh');
         })
     );
@@ -192,8 +196,10 @@ export function activate(context: vscode.ExtensionContext) {
     // --- 重新生成 ---
     context.subscriptions.push(
         vscode.commands.registerCommand('csharpsolution.rebuild', async (node: ProjectNode) => {
-            if (!node || node.type !== 'project') return;
-            await BuildService.rebuild(node.project.path, node.project.name);
+            if (!node || (node.type !== 'project' && node.type !== 'solution')) return;
+            const targetPath = node.type === 'solution' ? node.solution.path : node.project.path;
+            const targetName = node.type === 'solution' ? node.solution.name : node.project.name;
+            await BuildService.rebuild(targetPath, targetName);
             vscode.commands.executeCommand('csharpsolution.refresh');
         })
     );
@@ -241,6 +247,15 @@ export function activate(context: vscode.ExtensionContext) {
     watcher.onDidChange(debouncedRefresh);
     watcher.onDidDelete(debouncedRefresh);
     context.subscriptions.push(watcher);
+
+    const slnWatcher = vscode.workspace.createFileSystemWatcher(
+        '**/*.sln',
+        false, false, false
+    );
+    slnWatcher.onDidCreate(debouncedRefresh);
+    slnWatcher.onDidChange(debouncedRefresh);
+    slnWatcher.onDidDelete(debouncedRefresh);
+    context.subscriptions.push(slnWatcher);
 
     // --- 初始扫描 ---
     vscode.commands.executeCommand('csharpsolution.refresh');
