@@ -188,6 +188,9 @@ export function activate(context: vscode.ExtensionContext) {
                 case 'file':
                     filePath = path.join(path.dirname(node.projectPath), node.compile.include);
                     break;
+                case 'folder':
+                    filePath = path.join(path.dirname(node.projectPath), node.relPath);
+                    break;
             }
 
             if (filePath) {

@@ -56,11 +56,14 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
                     node.item.include,
                     'reference'
                 );
-            case 'folder':
-                return this.folderTreeItem(
+            case 'folder': {
+                const item = this.folderTreeItem(
                     path.basename(node.relPath) || node.relPath,
                     vscode.TreeItemCollapsibleState.Collapsed
                 );
+                item.contextValue = 'dirFolder';
+                return item;
+            }
             case 'file':
                 return this.fileTreeItem(node.compile, node.projectPath);
             default:

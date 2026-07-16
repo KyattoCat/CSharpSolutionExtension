@@ -109,7 +109,7 @@
         },
         {
           "command": "csharpsolution.addClass",
-          "when": "view == csharpsolution-projects && viewItem == folder",
+          "when": "view == csharpsolution-projects && viewItem == dirFolder",
           "group": "navigation@1"
         },
         {
@@ -190,6 +190,11 @@
         {
           "command": "csharpsolution.revealInExplorer",
           "when": "view == csharpsolution-projects && viewItem == file",
+          "group": "group4@1"
+        },
+        {
+          "command": "csharpsolution.revealInExplorer",
+          "when": "view == csharpsolution-projects && viewItem == dirFolder",
           "group": "group4@1"
         }
       ]
