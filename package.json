@@ -4,7 +4,7 @@
   "description": "管理传统 C# 项目（非 SDK 风格）的 VS Code 扩展，支持项目浏览、添加类、删除文件并自动维护 .csproj",
   "publisher": "kyattocat",
   "repository": { "url": "https://github.com/KyattoCat/CSharpSolutionExtension" },
-  "version": "0.0.1",
+  "version": "1.3.3",
   "engines": {
     "vscode": "^1.93.0"
   },

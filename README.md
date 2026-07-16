@@ -21,9 +21,9 @@
 
 | 配置项 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
+| `csharpsolution.vcs` | `string` | `"git"` | 版本控制系统（`git` / `svn` / `none`） |
 | `csharpsolution.excludePatterns` | `string[]` | `[]` | 额外的排除 glob 模式 |
 | `csharpsolution.defaultNamespace` | `string` | `""` | 默认根命名空间（留空使用项目名） |
-| `csharpsolution.classTemplate` | `string[]` | 标准类模板 | 类文件模板，支持 `{namespace}` 和 `{className}` |
 | `csharpsolution.renameSyncCode` | `boolean` | `true` | 重命名时自动更新 class 声明 |
 
 ## 要求
