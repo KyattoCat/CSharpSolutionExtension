@@ -9,15 +9,120 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "workspaceContains:**/*.csproj"
+  ],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "csharpsolution",
+          "title": "C# 项目管理",
+          "icon": "$(folder-library)"
+        }
+      ]
+    },
+    "views": {
+      "csharpsolution": [
+        {
+          "id": "csharpsolution-projects",
+          "name": "项目管理"
+        }
+      ]
+    },
     "commands": [
       {
-        "command": "csharpsolution.helloWorld",
-        "title": "Hello World"
+        "command": "csharpsolution.refresh",
+        "title": "刷新项目管理",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "csharpsolution.addClass",
+        "title": "添加类..."
+      },
+      {
+        "command": "csharpsolution.deleteFile",
+        "title": "删除"
+      },
+      {
+        "command": "csharpsolution.addExistingFile",
+        "title": "添加现有文件..."
+      },
+      {
+        "command": "csharpsolution.removePackage",
+        "title": "移除包"
       }
-    ]
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "csharpsolution.refresh",
+          "when": "view == csharpsolution-projects",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "csharpsolution.addClass",
+          "when": "view == csharpsolution-projects && viewItem == project",
+          "group": "navigation@1"
+        },
+        {
+          "command": "csharpsolution.addExistingFile",
+          "when": "view == csharpsolution-projects && viewItem == project",
+          "group": "navigation@2"
+        },
+        {
+          "command": "csharpsolution.addClass",
+          "when": "view == csharpsolution-projects && viewItem == folder",
+          "group": "navigation@1"
+        },
+        {
+          "command": "csharpsolution.deleteFile",
+          "when": "view == csharpsolution-projects && viewItem == file",
+          "group": "navigation@1"
+        },
+        {
+          "command": "csharpsolution.removePackage",
+          "when": "view == csharpsolution-projects && viewItem == package",
+          "group": "navigation@1"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "C# Project Manager",
+      "properties": {
+        "csharpsolution.excludePatterns": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "额外的排除 glob 模式（与默认的 node_modules/bin/obj 合并）"
+        },
+        "csharpsolution.defaultNamespace": {
+          "type": "string",
+          "default": "",
+          "description": "默认根命名空间（留空则使用项目名称作为命名空间）"
+        },
+        "csharpsolution.classTemplate": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [
+            "using System;",
+            "",
+            "namespace {namespace}",
+            "{",
+            "    public class {className}",
+            "    {",
+            "        ",
+            "    }",
+            "}",
+            ""
+          ],
+          "description": "类文件模板，支持 {namespace} 和 {className} 变量"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "pnpm run compile",
