@@ -236,4 +236,50 @@ suite('CsprojSerializer — parse', () => {
         const result = CsprojSerializer.removeCompile(withAdded, 'Temp.cs');
         assert.strictEqual(result, xml);
     });
+
+    test('updateCompilePath 替换自闭合 Compile 的路径', () => {
+        const xml = `<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Compile Include="Models\\User.cs" />
+  </ItemGroup>
+</Project>`;
+        const result = CsprojSerializer.updateCompilePath(xml, 'Models\\User.cs', 'Models\\Customer.cs');
+        assert.ok(result.includes('Models\\Customer.cs'));
+        assert.ok(!result.includes('Models\\User.cs'));
+    });
+
+    test('updateCompilePath 替换带子元素 Compile 的路径', () => {
+        const xml = `<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Compile Include="Global.asax.cs">
+      <DependentUpon>Global.asax</DependentUpon>
+    </Compile>
+  </ItemGroup>
+</Project>`;
+        const result = CsprojSerializer.updateCompilePath(xml, 'Global.asax.cs', 'HomePage.asax.cs');
+        assert.ok(result.includes('HomePage.asax.cs'));
+        assert.ok(!result.includes('Global.asax.cs'));
+        assert.ok(result.includes('DependentUpon'));
+    });
+
+    test('updateCompilePath 传入不存在的路径返回原 xml', () => {
+        const xml = `<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+  </ItemGroup>
+</Project>`;
+        const result = CsprojSerializer.updateCompilePath(xml, 'NoSuch.cs', 'New.cs');
+        assert.strictEqual(result, xml);
+    });
+
+    test('updateCompilePath 正确处理路径中的正则特殊字符', () => {
+        const xml = `<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Compile Include="Models\\User+Tests.cs" />
+  </ItemGroup>
+</Project>`;
+        const result = CsprojSerializer.updateCompilePath(xml, 'Models\\User+Tests.cs', 'Models\\UserTests.cs');
+        assert.ok(result.includes('UserTests.cs'));
+        assert.ok(!result.includes('User+Tests.cs'));
+    });
 });

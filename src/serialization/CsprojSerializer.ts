@@ -189,4 +189,30 @@ export class CsprojSerializer {
         );
         return xml.replace(selfClosing, '');
     }
+
+    /**
+     * 更新 .csproj 中某个 <Compile> 的 Include 路径。
+     * oldInclude → newInclude，处理自闭合和带子元素两种形式。
+     * 如果找不到匹配的 oldInclude，返回原 xml 不变。
+     */
+    static updateCompilePath(xml: string, oldInclude: string, newInclude: string): string {
+        const escaped = oldInclude.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+        // 尝试替换带子元素形式
+        const withChildren = new RegExp(
+            `(<Compile\\s+Include=")${escaped}("[^>]*(?<!\/)>[\\s\\S]*?<\\/Compile>)`,
+            'g'
+        );
+        if (withChildren.test(xml)) {
+            withChildren.lastIndex = 0;
+            return xml.replace(withChildren, `$1${newInclude}$2`);
+        }
+
+        // 尝试替换自闭合形式
+        const selfClosing = new RegExp(
+            `(<Compile\\s+Include=")${escaped}("[^>]*\\/>)`,
+            'g'
+        );
+        return xml.replace(selfClosing, `$1${newInclude}$2`);
+    }
 }
