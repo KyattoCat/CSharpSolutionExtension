@@ -405,8 +405,10 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.window.onDidChangeActiveTextEditor(editor => {
             if (editor?.document.uri.scheme === 'file') {
-                // reveal 接受 resourceUri 对象，通过 resourceUri 匹配树节点
-                treeView.reveal({ resourceUri: editor.document.uri } as any, { select: true, focus: false });
+                const node = treeProvider.findNodeByUri(editor.document.uri);
+                if (node) {
+                    treeView.reveal(node, { select: true, focus: false, expand: true });
+                }
             }
         })
     );

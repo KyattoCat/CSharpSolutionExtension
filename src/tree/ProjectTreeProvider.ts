@@ -103,7 +103,75 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
         }
     }
 
-    getParent(): undefined { return undefined; }
+    getParent(node: ProjectNode): ProjectNode | undefined {
+        switch (node.type) {
+            case 'project':
+                if (node.solutionPath) {
+                    const solution = this.solutions.find(s => s.path === node.solutionPath);
+                    if (solution) return { type: 'solution', solution };
+                }
+                return undefined;
+            case 'solution':
+                return undefined;
+            case 'file': {
+                const project = this.allProjects.find(p => p.path === node.projectPath);
+                if (!project) return undefined;
+                const dir = path.dirname(node.compile.include).replace(/\\/g, '/');
+                if (dir && dir !== '.') {
+                    return { type: 'folder', relPath: dir, projectPath: node.projectPath };
+                }
+                return { type: 'project', project, solutionPath: undefined };
+            }
+            case 'folder': {
+                const parentDir = path.dirname(node.relPath).replace(/\\/g, '/');
+                if (parentDir && parentDir !== '.') {
+                    return { type: 'folder', relPath: parentDir, projectPath: node.projectPath };
+                }
+                const project = this.allProjects.find(p => p.path === node.projectPath);
+                if (project) return { type: 'project', project, solutionPath: undefined };
+                return undefined;
+            }
+            case 'refGroup': {
+                const project = this.allProjects.find(p => p.path === node.projectPath);
+                if (project) return { type: 'project', project, solutionPath: undefined };
+                return undefined;
+            }
+            case 'refSubGroup':
+                return { type: 'refGroup', projectPath: node.projectPath };
+            case 'reference':
+            case 'projectRef':
+            case 'package':
+            case 'analyzer': {
+                const project = this.allProjects.find(p => p.path === node.projectPath);
+                if (!project) return undefined;
+                let label: string;
+                switch (node.type) {
+                    case 'reference': label = '程序集引用'; break;
+                    case 'projectRef': label = '项目引用'; break;
+                    case 'package': label = 'NuGet 包'; break;
+                    case 'analyzer': label = '分析器'; break;
+                }
+                return { type: 'refSubGroup', label, projectPath: node.projectPath };
+            }
+            default:
+                return undefined;
+        }
+    }
+
+    /** 根据 URI 查找对应的文件节点（供 reveal 使用） */
+    findNodeByUri(uri: vscode.Uri): ProjectNode | undefined {
+        const fsPath = uri.fsPath;
+        for (const project of this.allProjects) {
+            const projectDir = path.dirname(project.path);
+            for (const compile of project.compiles) {
+                const absPath = path.join(projectDir, compile.include);
+                if (absPath === fsPath) {
+                    return { type: 'file', compile, projectPath: project.path };
+                }
+            }
+        }
+        return undefined;
+    }
 
     // --- Private helpers ---
 
