@@ -1,71 +1,31 @@
-# csharpsolution README
+# CSharpSolution
 
-This is the README for your extension "csharpsolution". After writing up a brief description, we recommend including the following sections.
+管理传统 C# 项目（非 SDK 风格 `.csproj`）的 VS Code 扩展。
 
-## Features
+## 功能
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- **项目管理面板** — 在侧边栏新增「项目管理」视图，自动发现工作区中所有 `.csproj` 项目
+- **项目浏览** — 展开项目查看引用（项目引用、程序集引用、NuGet 包、分析器）和源文件目录树
+- **添加类** — 右键项目或文件夹，一键创建 C# 类文件并自动注册到 `.csproj` 的 `<Compile>` 中
+- **删除文件** — 右键删除源文件，自动从 `.csproj` 移除对应条目，文件进入回收站
+- **添加现有文件** — 将现有 `.cs` 文件加入项目
+- **自动刷新** — 监听 `.csproj` 文件变化，面板自动更新
 
-For example if there is an image subfolder under your extension project workspace:
+## 使用方式
 
-\!\[feature X\]\(images/feature-x.png\)
+1. 打开包含传统 `.csproj` 项目的工作区
+2. 点击侧边栏「C# 项目管理」图标
+3. 在「项目管理」面板中浏览和操作项目
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+## 配置
 
-## Requirements
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `csharpsolution.excludePatterns` | `string[]` | `[]` | 额外的排除 glob 模式 |
+| `csharpsolution.defaultNamespace` | `string` | `""` | 默认根命名空间（留空使用项目名） |
+| `csharpsolution.classTemplate` | `string[]` | 标准类模板 | 类文件模板，支持 `{namespace}` 和 `{className}` |
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+## 要求
 
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+- VS Code 1.93.0 及以上
+- 适用于显式包含 `<Compile Include="..."/>` 的传统 `.csproj` 项目（.NET Framework 4.x 等）
