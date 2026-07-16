@@ -36,11 +36,8 @@ jobs:
         run: xvfb-run -a pnpm test
         continue-on-error: true
 
-      - name: Install vsce
-        run: pnpm add -g @vscode/vsce
-
       - name: Package VSIX
-        run: vsce package
+        run: npx @vscode/vsce package
 
       - name: Upload VSIX artifact
         uses: actions/upload-artifact@v4
