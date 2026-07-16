@@ -1,24 +1,117 @@
-import { CsprojProject, CompileItem, ReferenceItem, ProjectReferenceItem, AnalyzerItem } from '../models/CsprojModel';
+import { CsprojProject, CompileItem, ReferenceItem, ProjectReferenceItem, AnalyzerItem, PackageItem } from '../models/CsprojModel';
 import * as path from 'path';
+import * as fs from 'fs';
 
 export class CsprojSerializer {
 
     /**
      * 解析 .csproj 文件内容为 CsprojProject 模型。
      * 使用正则表达式逐类提取，不依赖外部 XML 库。
+     * 自动检测 SDK 风格项目并路由到对应的解析逻辑。
      */
     static parse(xml: string, filePath: string): CsprojProject {
         const name = path.basename(filePath, '.csproj');
+        const isSdk = /<Project\s+Sdk="[^"]*"/.test(xml);
 
+        if (isSdk) {
+            return this.parseSdk(xml, filePath, name);
+        }
+        return this.parseLegacy(xml, filePath, name);
+    }
+
+    private static parseLegacy(xml: string, filePath: string, name: string): CsprojProject {
         return {
-            path: filePath,
-            name,
+            path: filePath, name, isSdk: false,
             compiles: this.parseCompiles(xml),
             references: this.parseReferences(xml),
             projectReferences: this.parseProjectReferences(xml),
-            packages: [],    // packages 由 PackagesConfigSerializer 处理
+            packages: [],
             analyzers: this.parseAnalyzers(xml),
         };
+    }
+
+    private static parseSdk(xml: string, filePath: string, name: string): CsprojProject {
+        const projectDir = path.dirname(filePath);
+        return {
+            path: filePath, name, isSdk: true,
+            compiles: this.globSourceFiles(projectDir, xml),
+            references: this.parseReferences(xml),
+            projectReferences: this.parseProjectReferences(xml),
+            packages: this.parsePackageReferences(xml),
+            analyzers: this.parseAnalyzers(xml),
+        };
+    }
+
+    /** Glob .cs files in project dir, applying Compile Remove and None rules */
+    static globSourceFiles(projectDir: string, xml: string): CompileItem[] {
+        // Parse Compile Remove patterns
+        const removePatterns: string[] = [];
+        const removeRegex = /<Compile\s+Remove="([^"]*)"/g;
+        let rm: RegExpExecArray | null;
+        while ((rm = removeRegex.exec(xml)) !== null) {
+            removePatterns.push(rm[1]);
+        }
+
+        // Parse None Include patterns (exclude from compilation)
+        const nonePatterns: string[] = [];
+        const noneRegex = /<None\s+Include="([^"]*)"/g;
+        let nm: RegExpExecArray | null;
+        while ((nm = noneRegex.exec(xml)) !== null) {
+            nonePatterns.push(nm[1]);
+        }
+
+        const files = this.walkDir(projectDir, projectDir);
+
+        return files
+            .filter(f => {
+                const rel = path.relative(projectDir, f).replace(/\\/g, '/');
+                return !this.matchesGlob(rel, removePatterns) && !this.matchesGlob(rel, nonePatterns);
+            })
+            .sort((a, b) => a.localeCompare(b))
+            .map(f => ({ include: path.relative(projectDir, f) }));
+    }
+
+    private static walkDir(dir: string, root: string): string[] {
+        const results: string[] = [];
+        try {
+            const entries = fs.readdirSync(dir, { withFileTypes: true });
+            for (const entry of entries) {
+                const full = path.join(dir, entry.name);
+                if (entry.isDirectory()) {
+                    if (entry.name === 'bin' || entry.name === 'obj' || entry.name === 'node_modules') continue;
+                    results.push(...this.walkDir(full, root));
+                } else if (entry.name.endsWith('.cs')) {
+                    results.push(full);
+                }
+            }
+        } catch { /* dir not readable */ }
+        return results;
+    }
+
+    private static matchesGlob(relPath: string, patterns: string[]): boolean {
+        for (const pat of patterns) {
+            const escaped = pat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regexStr = '^' + escaped
+                .replace(/\\\\\*\\\\\*/g, '.*')
+                .replace(/\\\\\*/g, '[^/]*')
+                .replace(/\\\\\?/g, '.') + '$';
+            if (new RegExp(regexStr).test(relPath)) return true;
+        }
+        return false;
+    }
+
+    /** Parse <PackageReference Include="..." Version="..." /> elements */
+    static parsePackageReferences(xml: string): PackageItem[] {
+        const results: PackageItem[] = [];
+        const regex = /<PackageReference\s+Include="([^"]*)"\s+Version="([^"]*)"[^>]*\/?>/g;
+        let match: RegExpExecArray | null;
+        while ((match = regex.exec(xml)) !== null) {
+            const item: PackageItem = { id: match[1], version: match[2] };
+            const tfm = match[0].match(/TargetFramework="([^"]*)"/);
+            if (tfm) item.targetFramework = tfm[1];
+            results.push(item);
+        }
+        return results;
     }
 
     /** 解析所有 <Compile Include="..."> 元素，支持自闭合和带子元素两种形式 */

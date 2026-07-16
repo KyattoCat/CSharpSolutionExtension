@@ -9,6 +9,8 @@ export interface CsprojProject {
     projectReferences: ProjectReferenceItem[];
     packages: PackageItem[];
     analyzers: AnalyzerItem[];
+    /** 是否为 SDK 风格项目（如 Microsoft.NET.Sdk） */
+    isSdk?: boolean;
 }
 
 export interface CompileItem {

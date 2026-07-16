@@ -282,4 +282,45 @@ suite('CsprojSerializer — parse', () => {
         assert.ok(result.includes('UserTests.cs'));
         assert.ok(!result.includes('User+Tests.cs'));
     });
+
+    test('解析 SDK 风格项目自动 glob 文件', () => {
+        const xml = `<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+</Project>`;
+        const project = CsprojSerializer.parse(xml, '/fake/SdkProject.csproj');
+        assert.strictEqual(project.isSdk, true);
+        assert.strictEqual(project.packages.length, 1);
+        assert.strictEqual(project.packages[0].id, 'Newtonsoft.Json');
+        assert.strictEqual(project.packages[0].version, '13.0.1');
+        assert.ok(Array.isArray(project.compiles));
+    });
+
+    test('解析 SDK 项目的 PackageReference', () => {
+        const xml = `<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="A" Version="1.0" />
+    <PackageReference Include="B" Version="2.0" />
+  </ItemGroup>
+</Project>`;
+        const project = CsprojSerializer.parse(xml, '/fake/SdkProject.csproj');
+        assert.strictEqual(project.isSdk, true);
+        assert.strictEqual(project.packages.length, 2);
+        assert.strictEqual(project.packages[0].id, 'A');
+        assert.strictEqual(project.packages[0].version, '1.0');
+    });
+
+    test('解析 SDK 项目的 Compile Remove 规则', () => {
+        const xml = `<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Generated\\**\\*.cs" />
+  </ItemGroup>
+</Project>`;
+        const project = CsprojSerializer.parse(xml, '/fake/SdkProject.csproj');
+        assert.strictEqual(project.isSdk, true);
+    });
 });
