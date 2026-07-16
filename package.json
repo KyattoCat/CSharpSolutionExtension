@@ -82,6 +82,10 @@
       {
         "command": "csharpsolution.removeProjectFromSolution",
         "title": "从解决方案移除"
+      },
+      {
+        "command": "csharpsolution.revealInExplorer",
+        "title": "在文件资源管理器中显示"
       }
     ],
     "menus": {
@@ -167,6 +171,26 @@
           "command": "csharpsolution.removeProjectFromSolution",
           "when": "view == csharpsolution-projects && viewItem == solutionProject",
           "group": "group3@1"
+        },
+        {
+          "command": "csharpsolution.revealInExplorer",
+          "when": "view == csharpsolution-projects && viewItem == project",
+          "group": "group4@1"
+        },
+        {
+          "command": "csharpsolution.revealInExplorer",
+          "when": "view == csharpsolution-projects && viewItem == solutionProject",
+          "group": "group4@1"
+        },
+        {
+          "command": "csharpsolution.revealInExplorer",
+          "when": "view == csharpsolution-projects && viewItem == solution",
+          "group": "group4@1"
+        },
+        {
+          "command": "csharpsolution.revealInExplorer",
+          "when": "view == csharpsolution-projects && viewItem == file",
+          "group": "group4@1"
         }
       ]
     },

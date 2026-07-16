@@ -172,6 +172,30 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
+    // --- 在文件资源管理器中显示 ---
+    context.subscriptions.push(
+        vscode.commands.registerCommand('csharpsolution.revealInExplorer', async (node: ProjectNode) => {
+            if (!node) return;
+
+            let filePath: string | undefined;
+            switch (node.type) {
+                case 'project':
+                    filePath = node.project.path;
+                    break;
+                case 'solution':
+                    filePath = node.solution.path;
+                    break;
+                case 'file':
+                    filePath = path.join(path.dirname(node.projectPath), node.compile.include);
+                    break;
+            }
+
+            if (filePath) {
+                vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(filePath));
+            }
+        })
+    );
+
     // --- 生成 ---
     context.subscriptions.push(
         vscode.commands.registerCommand('csharpsolution.build', async (node: ProjectNode) => {
