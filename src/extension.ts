@@ -7,6 +7,7 @@ import { FileTemplateService } from './services/FileTemplateService';
 import { FileService } from './services/FileService';
 import { BuildService } from './services/BuildService';
 import { SlnService } from './services/SlnService';
+import { GitStatusService } from './services/GitStatusService';
 import { ProjectNode } from './models/ProjectNode';
 import * as path from 'path';
 
@@ -30,10 +31,13 @@ export function activate(context: vscode.ExtensionContext) {
             const config = vscode.workspace.getConfiguration('csharpsolution');
             const excludes = config.get<string[]>('excludePatterns', []);
             const result = await ProjectDiscovery.scan(excludes);
+            const rootPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
+            const gitStatusMap = rootPath ? await GitStatusService.getStatus(rootPath) : new Map<string, string>();
             treeProvider.refresh({
                 solutions: result.solutions,
                 standaloneProjects: result.standaloneProjects,
                 allProjects: result.allProjects,
+                gitStatusMap,
             });
             treeView.message = (result.solutions.length === 0 && result.standaloneProjects.length === 0) ? '未发现 C# 项目' : undefined;
         })

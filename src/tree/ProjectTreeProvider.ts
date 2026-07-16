@@ -12,12 +12,16 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
     private solutions: Solution[] = [];
     private standaloneProjects: CsprojProject[] = [];
     private allProjects: CsprojProject[] = [];
+    private gitStatusMap: Map<string, string> = new Map();
 
-    refresh(data?: { solutions: Solution[]; standaloneProjects: CsprojProject[]; allProjects: CsprojProject[] }): void {
+    refresh(data?: { solutions: Solution[]; standaloneProjects: CsprojProject[]; allProjects: CsprojProject[]; gitStatusMap?: Map<string, string> }): void {
         if (data) {
             this.solutions = data.solutions;
             this.standaloneProjects = data.standaloneProjects;
             this.allProjects = data.allProjects;
+            if (data.gitStatusMap) {
+                this.gitStatusMap = data.gitStatusMap;
+            }
         }
         this._onDidChangeTreeData.fire();
     }
@@ -170,8 +174,17 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
         };
         item.contextValue = 'file';
         item.tooltip = compile.include;
+
+        const parts: string[] = [];
         if (compile.link) {
-            item.description = `→ ${compile.link}`;
+            parts.push(`→ ${compile.link}`);
+        }
+        const gitStatus = this.gitStatusMap.get(compile.include);
+        if (gitStatus) {
+            parts.push(gitStatus);
+        }
+        if (parts.length > 0) {
+            item.description = parts.join('  ');
         }
         return item;
     }
