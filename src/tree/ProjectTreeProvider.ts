@@ -13,14 +13,11 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
     private standaloneProjects: CsprojProject[] = [];
     private allProjects: CsprojProject[] = [];
     private gitStatusMap: Map<string, string> = new Map();
-    private nodeCache = new Map<string, ProjectNode>();
-
     refresh(data?: { solutions: Solution[]; standaloneProjects: CsprojProject[]; allProjects: CsprojProject[]; gitStatusMap?: Map<string, string> }): void {
         if (data) {
             this.solutions = data.solutions;
             this.standaloneProjects = data.standaloneProjects;
             this.allProjects = data.allProjects;
-            this.nodeCache.clear();
             if (data.gitStatusMap) {
                 this.gitStatusMap = data.gitStatusMap;
             }
@@ -172,18 +169,6 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
             }
         }
         return undefined;
-    }
-
-    /** 获取或创建缓存的文件节点（保持 getChildren 返回引用一致） */
-    private fileNode(compile: CompileItem, projectPath: string): ProjectNode {
-        const projectDir = path.dirname(projectPath);
-        const absPath = path.join(projectDir, compile.include);
-        let node = this.nodeCache.get(absPath);
-        if (!node) {
-            node = { type: 'file' as const, compile, projectPath };
-            this.nodeCache.set(absPath, node);
-        }
-        return node;
     }
 
     // --- Private helpers ---
@@ -368,7 +353,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
         const result: ProjectNode[] = [];
 
         for (const compile of rootFiles) {
-            result.push(this.fileNode(compile, projectPath));
+            result.push({ type: 'file', compile, projectPath });
         }
 
         // Only add top-level folders; deeper nesting handled in getFolderChildren
@@ -421,7 +406,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
 
         directFiles.sort((a, b) => a.include.localeCompare(b.include));
         for (const compile of directFiles) {
-            result.push(this.fileNode(compile, node.projectPath));
+            result.push({ type: 'file', compile, projectPath: node.projectPath });
         }
 
         return result;
