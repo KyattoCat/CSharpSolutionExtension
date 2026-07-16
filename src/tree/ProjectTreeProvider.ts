@@ -34,25 +34,25 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
                 return this.folderTreeItem(node.label, vscode.TreeItemCollapsibleState.Collapsed);
             case 'reference':
                 return this.leafTreeItem(
-                    `🔧 ${node.item.include}`,
+                    node.item.include,
                     node.item.hintPath || '',
                     'reference'
                 );
             case 'projectRef':
                 return this.leafTreeItem(
-                    `🔗 ${node.item.name || path.basename(node.item.include, '.csproj')}`,
+                    node.item.name || path.basename(node.item.include, '.csproj'),
                     node.item.include,
                     'reference'
                 );
             case 'package':
                 return this.leafTreeItem(
-                    `📦 ${node.item.id} v${node.item.version}`,
+                    `${node.item.id} v${node.item.version}`,
                     node.item.targetFramework || '',
                     'package'
                 );
             case 'analyzer':
                 return this.leafTreeItem(
-                    `⚙ ${path.basename(node.item.include)}`,
+                    path.basename(node.item.include),
                     node.item.include,
                     'reference'
                 );
@@ -105,7 +105,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
 
     private solutionTreeItem(solution: Solution): vscode.TreeItem {
         const item = new vscode.TreeItem(
-            `📋 ${solution.name}`,
+            solution.name,
             vscode.TreeItemCollapsibleState.Expanded
         );
         item.contextValue = 'solution';
@@ -122,7 +122,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
 
     private projectTreeItem(project: CsprojProject, isSolutionChild?: boolean): vscode.TreeItem {
         const item = new vscode.TreeItem(
-            `📦 ${project.name}`,
+            project.name,
             vscode.TreeItemCollapsibleState.Expanded
         );
         item.contextValue = isSolutionChild ? 'solutionProject' : 'project';
@@ -143,7 +143,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
     }
 
     private folderTreeItem(label: string, collapsible: vscode.TreeItemCollapsibleState): vscode.TreeItem {
-        const item = new vscode.TreeItem(`📂 ${label}`, collapsible);
+        const item = new vscode.TreeItem(label, collapsible);
         item.contextValue = 'folder';
         return item;
     }
@@ -159,7 +159,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
         const projectDir = path.dirname(projectPath);
         const absPath = path.join(projectDir, compile.include);
         const item = new vscode.TreeItem(
-            `🔷 ${path.basename(compile.include)}`,
+            path.basename(compile.include),
             vscode.TreeItemCollapsibleState.None
         );
         item.resourceUri = vscode.Uri.file(absPath);
