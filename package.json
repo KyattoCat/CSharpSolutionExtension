@@ -173,6 +173,21 @@
           "group": "group3@1"
         },
         {
+          "command": "csharpsolution.build",
+          "when": "view == csharpsolution-projects && viewItem == solutionProject",
+          "group": "group2@1"
+        },
+        {
+          "command": "csharpsolution.clean",
+          "when": "view == csharpsolution-projects && viewItem == solutionProject",
+          "group": "group2@2"
+        },
+        {
+          "command": "csharpsolution.rebuild",
+          "when": "view == csharpsolution-projects && viewItem == solutionProject",
+          "group": "group2@3"
+        },
+        {
           "command": "csharpsolution.revealInExplorer",
           "when": "view == csharpsolution-projects && viewItem == project",
           "group": "group4@1"
