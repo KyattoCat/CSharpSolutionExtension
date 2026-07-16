@@ -143,4 +143,97 @@ suite('CsprojSerializer — parse', () => {
         assert.strictEqual(project.analyzers.length, 1);
         assert.strictEqual(project.analyzers[0].include, '..\\packages\\SomeAnalyzer.dll');
     });
+
+    test('添加 Compile 到已有 ItemGroup', () => {
+        const xml = `<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="Models\\User.cs" />
+  </ItemGroup>
+</Project>`;
+        const result = CsprojSerializer.addCompile(xml, 'Models\\Order.cs');
+        // 新元素应插入到最后一个 Compile 之后
+        assert.ok(result.includes('<Compile Include="Models\\Order.cs" />'));
+        // 原有内容不变
+        assert.ok(result.includes('<Compile Include="Program.cs" />'));
+        assert.ok(result.includes('<Compile Include="Models\\User.cs" />'));
+        // 验证顺序：User.cs 在 Order.cs 之前
+        const userIndex = result.indexOf('User.cs');
+        const orderIndex = result.indexOf('Order.cs');
+        assert.ok(userIndex < orderIndex);
+    });
+
+    test('移除自闭合 Compile 元素', () => {
+        const xml = `<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="Models\\User.cs" />
+  </ItemGroup>
+</Project>`;
+        const result = CsprojSerializer.removeCompile(xml, 'Models\\User.cs');
+        assert.ok(!result.includes('User.cs'));
+        assert.ok(result.includes('Program.cs'));
+    });
+
+    test('移除带子元素的 Compile', () => {
+        const xml = `<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Compile Include="Global.asax.cs">
+      <DependentUpon>Global.asax</DependentUpon>
+    </Compile>
+  </ItemGroup>
+</Project>`;
+        const result = CsprojSerializer.removeCompile(xml, 'Global.asax.cs');
+        assert.ok(!result.includes('Global.asax.cs'));
+        assert.ok(!result.includes('DependentUpon'));
+    });
+
+    test('添加到没有 Compile 的项目（创建 ItemGroup）', () => {
+        const xml = `<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+  </PropertyGroup>
+  <Import Project="$(MSBuildToolsPath)\\Microsoft.CSharp.targets" />
+</Project>`;
+        const result = CsprojSerializer.addCompile(xml, 'NewFile.cs');
+        assert.ok(result.includes('<Compile Include="NewFile.cs" />'));
+        assert.ok(result.includes('<ItemGroup>'));
+    });
+
+    test('removeCompile 传入不存在的 include 应返回原 xml', () => {
+        const xml = `<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+  </ItemGroup>
+</Project>`;
+        const result = CsprojSerializer.removeCompile(xml, 'NonExistent.cs');
+        assert.strictEqual(result, xml);
+    });
+
+    test('addCompile 当最后一个 Compile 是 with-children 形式时也能正确插入', () => {
+        const xml = `<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Compile Include="Global.asax.cs">
+      <DependentUpon>Global.asax</DependentUpon>
+    </Compile>
+  </ItemGroup>
+</Project>`;
+        const result = CsprojSerializer.addCompile(xml, 'NewFile.cs');
+        assert.ok(result.includes('<Compile Include="NewFile.cs" />'));
+        assert.ok(result.includes('Global.asax.cs'));
+        const globalIndex = result.indexOf('Global.asax.cs');
+        const newFileIndex = result.indexOf('NewFile.cs');
+        assert.ok(globalIndex < newFileIndex);
+    });
+
+    test('addCompile 后立即 removeCompile 应恢复原 xml（往返测试）', () => {
+        const xml = `<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+  </ItemGroup>
+</Project>`;
+        const withAdded = CsprojSerializer.addCompile(xml, 'Temp.cs');
+        const result = CsprojSerializer.removeCompile(withAdded, 'Temp.cs');
+        assert.strictEqual(result, xml);
+    });
 });

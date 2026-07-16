@@ -118,4 +118,75 @@ export class CsprojSerializer {
         }
         return results;
     }
+
+    /**
+     * 向 .csproj 内容中添加一个 <Compile Include="..."> 元素。
+     * 策略：找到最后一个已有 Compile 的位置，在其后插入新行。
+     * 如果项目中尚无 Compile，则在 </Project> 之前创建 ItemGroup。
+     */
+    static addCompile(xml: string, include: string): string {
+        const newLine = `    <Compile Include="${include}" />`;
+
+        // 查找所有 Compile Include 行
+        const compileRegex = /^\s*<Compile\s+Include="[^"]*"/gm;
+        const matches = [...xml.matchAll(compileRegex)];
+
+        if (matches.length > 0) {
+            // 找到最后一个 Compile 块的结束位置
+            const lastMatch = matches[matches.length - 1];
+            const startIndex = lastMatch.index!;
+
+            // 查找这个 Compile 元素的结束位置（/> 或 </Compile>）
+            const rest = xml.slice(startIndex);
+            const selfCloseEnd = rest.indexOf('/>');
+            const closeTagEnd = rest.indexOf('</Compile>');
+
+            let insertPos: number;
+            if (selfCloseEnd !== -1 && (closeTagEnd === -1 || selfCloseEnd < closeTagEnd)) {
+                insertPos = startIndex + selfCloseEnd + 2; // 跳过 />
+            } else {
+                insertPos = startIndex + closeTagEnd + '</Compile>'.length;
+            }
+
+            // 跳到该行末尾（下一个换行符之后）
+            const newlineAfter = xml.indexOf('\n', insertPos);
+            insertPos = newlineAfter !== -1 ? newlineAfter + 1 : xml.length;
+
+            return xml.slice(0, insertPos) + newLine + '\n' + xml.slice(insertPos);
+        }
+
+        // 无 Compile —— 在 </Project> 前创建 ItemGroup
+        const projectClose = xml.lastIndexOf('</Project>');
+        const itemGroup = `  <ItemGroup>\n${newLine}\n  </ItemGroup>\n`;
+        if (projectClose !== -1) {
+            return xml.slice(0, projectClose) + itemGroup + xml.slice(projectClose);
+        }
+        return xml + '\n' + itemGroup;
+    }
+
+    /**
+     * 从 .csproj 内容中移除指定 Include 的 <Compile> 元素。
+     * 同时处理自闭合和带子元素两种形式。
+     */
+    static removeCompile(xml: string, include: string): string {
+        // 转义所有正则元字符
+        const escaped = include.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+        // 先尝试匹配带子元素形式（注意使用 (?<!\/)> 来避免匹配自闭合标签）
+        const withChildren = new RegExp(
+            `[^\\S\\n]*<Compile\\s+Include="${escaped}"[^>]*(?<!\/)>[\\s\\S]*?<\\/Compile>[^\\S\\n]*\\n?`,
+            'g'
+        );
+        const withChildrenResult = xml.replace(withChildren, '');
+        if (withChildrenResult !== xml) {
+            return withChildrenResult;
+        }
+
+        // 再尝试自闭合形式
+        const selfClosing = new RegExp(
+            `[^\\S\\n]*<Compile\\s+Include="${escaped}"[^>]*\\/>[^\\S\\n]*\\n?`,
+            'g'
+        );
+        return xml.replace(selfClosing, '');
+    }
 }
