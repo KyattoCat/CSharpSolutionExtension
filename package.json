@@ -54,6 +54,22 @@
       {
         "command": "csharpsolution.removePackage",
         "title": "移除包"
+      },
+      {
+        "command": "csharpsolution.renameFile",
+        "title": "重命名"
+      },
+      {
+        "command": "csharpsolution.build",
+        "title": "生成"
+      },
+      {
+        "command": "csharpsolution.clean",
+        "title": "清理"
+      },
+      {
+        "command": "csharpsolution.rebuild",
+        "title": "重新生成"
       }
     ],
     "menus": {
@@ -83,12 +99,32 @@
         {
           "command": "csharpsolution.deleteFile",
           "when": "view == csharpsolution-projects && viewItem == file",
-          "group": "navigation@1"
+          "group": "navigation@2"
         },
         {
           "command": "csharpsolution.removePackage",
           "when": "view == csharpsolution-projects && viewItem == package",
           "group": "navigation@1"
+        },
+        {
+          "command": "csharpsolution.renameFile",
+          "when": "view == csharpsolution-projects && viewItem == file",
+          "group": "navigation@1"
+        },
+        {
+          "command": "csharpsolution.build",
+          "when": "view == csharpsolution-projects && viewItem == project",
+          "group": "group2@1"
+        },
+        {
+          "command": "csharpsolution.clean",
+          "when": "view == csharpsolution-projects && viewItem == project",
+          "group": "group2@2"
+        },
+        {
+          "command": "csharpsolution.rebuild",
+          "when": "view == csharpsolution-projects && viewItem == project",
+          "group": "group2@3"
         }
       ]
     },
@@ -122,6 +158,11 @@
             ""
           ],
           "description": "类文件模板，支持 {namespace} 和 {className} 变量"
+        },
+        "csharpsolution.renameSyncCode": {
+          "type": "boolean",
+          "default": true,
+          "description": "重命名文件时自动更新 class/namespace 声明"
         }
       }
     }

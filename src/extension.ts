@@ -5,6 +5,7 @@ import { ProjectDiscovery } from './services/ProjectDiscovery';
 import { CsprojService } from './services/CsprojService';
 import { FileTemplateService } from './services/FileTemplateService';
 import { FileService } from './services/FileService';
+import { BuildService } from './services/BuildService';
 import { ProjectNode } from './models/ProjectNode';
 import * as path from 'path';
 
@@ -125,6 +126,71 @@ export function activate(context: vscode.ExtensionContext) {
                     `添加文件失败: ${err instanceof Error ? err.message : String(err)}`
                 );
             }
+        })
+    );
+
+    // --- 重命名文件 ---
+    context.subscriptions.push(
+        vscode.commands.registerCommand('csharpsolution.renameFile', async (node: ProjectNode) => {
+            if (!node || node.type !== 'file') return;
+
+            const oldName = path.basename(node.compile.include, '.cs');
+            const newName = await vscode.window.showInputBox({
+                prompt: '请输入新文件名（不含扩展名）',
+                value: oldName,
+                validateInput: (value) => {
+                    if (!FileTemplateService.isValidClassName(value)) {
+                        if (!value.trim()) return '文件名不能为空';
+                        if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(value.trim())) {
+                            return '文件名必须为合法的 C# 标识符';
+                        }
+                        return `"${value}" 是 C# 关键字，不能用作文件名`;
+                    }
+                    if (value === oldName) return '新文件名与旧文件名相同';
+                    return null;
+                },
+            });
+
+            if (!newName) return;
+
+            try {
+                const config = vscode.workspace.getConfiguration('csharpsolution');
+                const syncCode = config.get<boolean>('renameSyncCode', true);
+                await FileService.renameFile(node.projectPath, node.compile, newName, syncCode);
+                vscode.window.showInformationMessage(`已重命名: ${oldName}.cs → ${newName}.cs`);
+                vscode.commands.executeCommand('csharpsolution.refresh');
+            } catch (err) {
+                vscode.window.showErrorMessage(
+                    `重命名失败: ${err instanceof Error ? err.message : String(err)}`
+                );
+            }
+        })
+    );
+
+    // --- 生成 ---
+    context.subscriptions.push(
+        vscode.commands.registerCommand('csharpsolution.build', async (node: ProjectNode) => {
+            if (!node || node.type !== 'project') return;
+            await BuildService.build(node.project.path, node.project.name);
+            vscode.commands.executeCommand('csharpsolution.refresh');
+        })
+    );
+
+    // --- 清理 ---
+    context.subscriptions.push(
+        vscode.commands.registerCommand('csharpsolution.clean', async (node: ProjectNode) => {
+            if (!node || node.type !== 'project') return;
+            await BuildService.clean(node.project.path, node.project.name);
+            vscode.commands.executeCommand('csharpsolution.refresh');
+        })
+    );
+
+    // --- 重新生成 ---
+    context.subscriptions.push(
+        vscode.commands.registerCommand('csharpsolution.rebuild', async (node: ProjectNode) => {
+            if (!node || node.type !== 'project') return;
+            await BuildService.rebuild(node.project.path, node.project.name);
+            vscode.commands.executeCommand('csharpsolution.refresh');
         })
     );
 
