@@ -160,12 +160,21 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
         }
     }
 
-    /** 根据 URI 查找对应的文件节点（供 reveal 使用）—— 返回缓存引用而非新对象 */
+    /** 根据 URI 查找对应的文件节点（供 reveal 使用）—— 遍历 allProjects 创建新节点 */
     findNodeByUri(uri: vscode.Uri): ProjectNode | undefined {
-        return this.nodeCache.get(uri.fsPath);
+        const fsPath = uri.fsPath;
+        for (const project of this.allProjects) {
+            const projectDir = path.dirname(project.path);
+            for (const compile of project.compiles) {
+                if (path.join(projectDir, compile.include) === fsPath) {
+                    return { type: 'file', compile, projectPath: project.path };
+                }
+            }
+        }
+        return undefined;
     }
 
-    /** 获取或创建缓存的文件节点 */
+    /** 获取或创建缓存的文件节点（保持 getChildren 返回引用一致） */
     private fileNode(compile: CompileItem, projectPath: string): ProjectNode {
         const projectDir = path.dirname(projectPath);
         const absPath = path.join(projectDir, compile.include);
