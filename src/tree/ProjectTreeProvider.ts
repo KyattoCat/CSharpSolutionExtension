@@ -1,19 +1,23 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { CsprojProject, CompileItem } from '../models/CsprojModel';
+import { CsprojProject, CompileItem, Solution } from '../models/CsprojModel';
 import { ProjectNode } from '../models/ProjectNode';
+import { ProjectDiscovery } from '../services/ProjectDiscovery';
 
 export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode> {
 
     private _onDidChangeTreeData = new vscode.EventEmitter<ProjectNode | undefined | void>();
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-    private projects: CsprojProject[] = [];
+    private solutions: Solution[] = [];
+    private standaloneProjects: CsprojProject[] = [];
+    private allProjects: CsprojProject[] = [];
 
-    /** 更新内部数据并刷新视图 */
-    refresh(projects?: CsprojProject[]): void {
-        if (projects) {
-            this.projects = projects;
+    refresh(data?: { solutions: Solution[]; standaloneProjects: CsprojProject[]; allProjects: CsprojProject[] }): void {
+        if (data) {
+            this.solutions = data.solutions;
+            this.standaloneProjects = data.standaloneProjects;
+            this.allProjects = data.allProjects;
         }
         this._onDidChangeTreeData.fire();
     }
@@ -22,6 +26,8 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
         switch (node.type) {
             case 'project':
                 return this.projectTreeItem(node.project);
+            case 'solution':
+                return this.solutionTreeItem(node.solution);
             case 'refGroup':
                 return this.folderTreeItem('引用', vscode.TreeItemCollapsibleState.Expanded);
             case 'refSubGroup':
@@ -64,13 +70,19 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
 
     getChildren(node?: ProjectNode): ProjectNode[] | undefined {
         if (!node) {
-            if (this.projects.length === 0) {
-                return undefined; // triggers empty state message
+            const children: ProjectNode[] = [];
+            for (const s of this.solutions) {
+                children.push({ type: 'solution' as const, solution: s });
             }
-            return this.projects.map(p => ({ type: 'project' as const, project: p }));
+            for (const p of this.standaloneProjects) {
+                children.push({ type: 'project' as const, project: p });
+            }
+            if (children.length === 0) return undefined;
+            return children;
         }
-
         switch (node.type) {
+            case 'solution':
+                return this.getSolutionChildren(node.solution);
             case 'project':
                 return this.getProjectChildren(node.project);
             case 'refGroup':
@@ -87,6 +99,22 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
     getParent(): undefined { return undefined; }
 
     // --- Private helpers ---
+
+    private solutionTreeItem(solution: Solution): vscode.TreeItem {
+        const item = new vscode.TreeItem(
+            `📋 ${solution.name}`,
+            vscode.TreeItemCollapsibleState.Expanded
+        );
+        item.contextValue = 'solution';
+        item.tooltip = solution.path;
+        item.description = `${solution.projects.length} 个项目`;
+        return item;
+    }
+
+    private getSolutionChildren(solution: Solution): ProjectNode[] {
+        const projects = ProjectDiscovery.findProjectsForSolution(solution, this.allProjects);
+        return projects.map(p => ({ type: 'project' as const, project: p }));
+    }
 
     private projectTreeItem(project: CsprojProject): vscode.TreeItem {
         const item = new vscode.TreeItem(
@@ -163,7 +191,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
     }
 
     private getRefChildren(projectPath: string): ProjectNode[] {
-        const project = this.projects.find(p => p.path === projectPath);
+        const project = this.allProjects.find(p => p.path === projectPath);
         if (!project) return [];
 
         const children: ProjectNode[] = [];
@@ -185,7 +213,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
     }
 
     private getRefSubGroupChildren(node: ProjectNode & { type: 'refSubGroup' }): ProjectNode[] {
-        const project = this.projects.find(p => p.path === node.projectPath);
+        const project = this.allProjects.find(p => p.path === node.projectPath);
         if (!project) return [];
 
         switch (node.label) {
@@ -249,7 +277,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
     }
 
     private getFolderChildren(node: ProjectNode & { type: 'folder' }): ProjectNode[] {
-        const project = this.projects.find(p => p.path === node.projectPath);
+        const project = this.allProjects.find(p => p.path === node.projectPath);
         if (!project) return [];
 
         const normalizedFolder = node.relPath.replace(/\\/g, '/');
