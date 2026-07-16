@@ -1,11 +1,16 @@
 .vscode/**
 .vscode-test/**
 src/**
+node_modules/**
 .gitignore
+.npmrc
 .yarnrc
 vsc-extension-quickstart.md
+pnpm-lock.yaml
 **/tsconfig.json
 **/.eslintrc.json
 **/*.map
 **/*.ts
 **/.vscode-test.*
+docs/**
+.github/**

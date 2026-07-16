@@ -1,7 +1,8 @@
 {
   "name": "csharpsolution",
   "displayName": "CSharpSolution",
-  "description": "",
+  "description": "管理传统 C# 项目（非 SDK 风格）的 VS Code 扩展，支持项目浏览、添加类、删除文件并自动维护 .csproj",
+  "publisher": "kyattocat",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.15.0"
