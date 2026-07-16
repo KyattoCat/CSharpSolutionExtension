@@ -79,7 +79,7 @@ export function activate(context: vscode.ExtensionContext) {
             try {
                 const config = vscode.workspace.getConfiguration('csharpsolution');
                 const defaultNs = config.get<string>('defaultNamespace', '') || projectName;
-                const template = config.get<string[]>('classTemplate', getDefaultTemplate());
+                const template = config.get<string[]>('classTemplate') || DEFAULT_CLASS_TEMPLATE;
 
                 await CsprojService.addClass(projectPath, dirPath, className, defaultNs, template);
                 vscode.window.showInformationMessage(`已创建类: ${className}.cs`);
@@ -419,17 +419,15 @@ export function activate(context: vscode.ExtensionContext) {
 
 export function deactivate() {}
 
-function getDefaultTemplate(): string[] {
-    return [
-        'using System;',
-        '',
-        'namespace {namespace}',
-        '{',
-        '    public class {className}',
-        '    {',
-        '        ',
-        '    }',
-        '}',
-        '',
-    ];
-}
+const DEFAULT_CLASS_TEMPLATE = [
+    'using System;',
+    '',
+    'namespace {namespace}',
+    '{',
+    '    public class {className}',
+    '    {',
+    '        ',
+    '    }',
+    '}',
+    '',
+];

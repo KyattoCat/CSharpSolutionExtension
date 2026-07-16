@@ -234,23 +234,6 @@
           "default": "",
           "description": "默认根命名空间（留空则使用项目名称作为命名空间）"
         },
-        "csharpsolution.classTemplate": {
-          "type": "array",
-          "items": { "type": "string" },
-          "default": [
-            "using System;",
-            "",
-            "namespace {namespace}",
-            "{",
-            "    public class {className}",
-            "    {",
-            "        ",
-            "    }",
-            "}",
-            ""
-          ],
-          "description": "类文件模板，支持 {namespace} 和 {className} 变量"
-        },
         "csharpsolution.renameSyncCode": {
           "type": "boolean",
           "default": true,
