@@ -44,7 +44,7 @@ export class SlnParser {
         while ((match = regex.exec(content)) !== null) {
             const relPath = match[1];
             projects.push({
-                name: path.basename(relPath, '.csproj'),
+                name: path.basename(relPath.replace(/\\/g, '/'), '.csproj'),
                 relPath,
                 guid: '',
             });
