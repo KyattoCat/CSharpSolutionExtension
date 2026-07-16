@@ -53,8 +53,8 @@ export class ProjectDiscovery {
             }
         }
 
-        // 2. 扫描所有 .sln
-        const allSlnUris = await vscode.workspace.findFiles('**/*.sln', null);
+        // 2. 扫描所有 .sln 和 .slnx
+        const allSlnUris = await vscode.workspace.findFiles('**/*.{sln,slnx}', null);
         const slnUris = allSlnUris.filter(uri => !matchesAny(uri.fsPath, allExcludes));
 
         const solutions: Solution[] = [];

@@ -41,4 +41,23 @@ EndProject
         const solution = SlnParser.parse('garbage', '/fake/Bad.sln');
         assert.strictEqual(solution.projects.length, 0);
     });
+
+    test('解析 .slnx 文件', () => {
+        const slnx = `<Solution>
+  <Project Path="MyApp\\MyApp.csproj" />
+  <Project Path="Tests\\MyApp.Tests.csproj" />
+</Solution>`;
+        const solution = SlnParser.parse(slnx, '/fake/MySolution.slnx');
+        assert.strictEqual(solution.name, 'MySolution');
+        assert.strictEqual(solution.projects.length, 2);
+        assert.strictEqual(solution.projects[0].name, 'MyApp');
+        assert.strictEqual(solution.projects[0].relPath, 'MyApp\\MyApp.csproj');
+        assert.strictEqual(solution.projects[1].name, 'MyApp.Tests');
+    });
+
+    test('解析空 .slnx', () => {
+        const solution = SlnParser.parse('<Solution></Solution>', '/fake/Empty.slnx');
+        assert.strictEqual(solution.name, 'Empty');
+        assert.strictEqual(solution.projects.length, 0);
+    });
 });

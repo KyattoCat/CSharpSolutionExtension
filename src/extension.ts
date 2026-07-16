@@ -257,6 +257,15 @@ export function activate(context: vscode.ExtensionContext) {
     slnWatcher.onDidDelete(debouncedRefresh);
     context.subscriptions.push(slnWatcher);
 
+    const slnxWatcher = vscode.workspace.createFileSystemWatcher(
+        '**/*.slnx',
+        false, false, false
+    );
+    slnxWatcher.onDidCreate(debouncedRefresh);
+    slnxWatcher.onDidChange(debouncedRefresh);
+    slnxWatcher.onDidDelete(debouncedRefresh);
+    context.subscriptions.push(slnxWatcher);
+
     // --- 初始扫描 ---
     vscode.commands.executeCommand('csharpsolution.refresh');
 }
