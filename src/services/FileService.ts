@@ -30,6 +30,15 @@ export class FileService {
             }
         }
 
+        const csprojContent = await fs.promises.readFile(projectPath, 'utf-8');
+        const isSdk = /<Project\s+Sdk="[^"]*"/.test(csprojContent);
+        if (isSdk) {
+            const targetDir = path.dirname(newAbsPath);
+            await fs.promises.mkdir(targetDir, { recursive: true });
+            await fs.promises.rename(oldAbsPath, newAbsPath);
+            return;
+        }
+
         let newContent: string;
         try {
             const oldContent = await fs.promises.readFile(oldAbsPath, 'utf-8');
@@ -59,7 +68,6 @@ export class FileService {
         }
 
         try {
-            const csprojContent = await fs.promises.readFile(projectPath, 'utf-8');
             const updatedContent = CsprojSerializer.updateCompilePath(csprojContent, oldRelPath, newRelPath);
             if (updatedContent === csprojContent) {
                 throw new Error(`Path not found in csproj: ${oldRelPath}`);
@@ -81,6 +89,19 @@ export class FileService {
         compileItem: CompileItem
     ): Promise<void> {
         const csprojContent = await fs.promises.readFile(projectPath, 'utf-8');
+        const isSdk = /<Project\s+Sdk="[^"]*"/.test(csprojContent);
+        if (isSdk) {
+            const projectDir = path.dirname(projectPath);
+            const filePath = path.join(projectDir, compileItem.include);
+            const fileUri = vscode.Uri.file(filePath);
+            try {
+                await vscode.workspace.fs.delete(fileUri, { useTrash: true });
+            } catch (err) {
+                console.warn(`Failed to delete file: ${filePath}`, err);
+            }
+            return;
+        }
+
         const updatedContent = CsprojSerializer.removeCompile(csprojContent, compileItem.include);
         await fs.promises.writeFile(projectPath, updatedContent, 'utf-8');
 
