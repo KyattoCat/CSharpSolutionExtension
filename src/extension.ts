@@ -8,6 +8,7 @@ import { FileService } from './services/FileService';
 import { BuildService } from './services/BuildService';
 import { SlnService } from './services/SlnService';
 import { GitStatusService } from './services/GitStatusService';
+import { SvnStatusService } from './services/SvnStatusService';
 import { ProjectNode } from './models/ProjectNode';
 import * as path from 'path';
 
@@ -32,7 +33,13 @@ export function activate(context: vscode.ExtensionContext) {
             const excludes = config.get<string[]>('excludePatterns', []);
             const result = await ProjectDiscovery.scan(excludes);
             const rootPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
-            const gitStatusMap = rootPath ? await GitStatusService.getStatus(rootPath) : new Map<string, string>();
+            const vcs = config.get<string>('vcs', 'git');
+            let gitStatusMap: Map<string, string> = new Map();
+            if (vcs === 'git') {
+                gitStatusMap = rootPath ? await GitStatusService.getStatus(rootPath) : new Map();
+            } else if (vcs === 'svn') {
+                gitStatusMap = rootPath ? await SvnStatusService.getStatus(rootPath) : new Map();
+            }
             treeProvider.refresh({
                 solutions: result.solutions,
                 standaloneProjects: result.standaloneProjects,

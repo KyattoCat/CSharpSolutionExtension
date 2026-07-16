@@ -202,6 +202,12 @@
     "configuration": {
       "title": "C# Project Manager",
       "properties": {
+        "csharpsolution.vcs": {
+          "type": "string",
+          "enum": ["git", "svn", "none"],
+          "default": "git",
+          "description": "版本控制系统（SVN 需要命令行工具）"
+        },
         "csharpsolution.excludePatterns": {
           "type": "array",
           "items": { "type": "string" },
