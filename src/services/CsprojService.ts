@@ -5,7 +5,6 @@ import * as fs from 'fs';
 import { CsprojSerializer } from '../serialization/CsprojSerializer';
 import { PackagesConfigSerializer } from '../serialization/PackagesConfigSerializer';
 import { FileTemplateService } from './FileTemplateService';
-import { CompileItem } from '../models/CsprojModel';
 
 export class CsprojService {
 
@@ -49,24 +48,6 @@ export class CsprojService {
         await fs.promises.writeFile(projectPath, updatedContent, 'utf-8');
 
         return fileUri;
-    }
-
-    static async deleteFile(
-        projectPath: string,
-        compileItem: CompileItem
-    ): Promise<void> {
-        const csprojContent = await fs.promises.readFile(projectPath, 'utf-8');
-        const updatedContent = CsprojSerializer.removeCompile(csprojContent, compileItem.include);
-        await fs.promises.writeFile(projectPath, updatedContent, 'utf-8');
-
-        const projectDir = path.dirname(projectPath);
-        const filePath = path.join(projectDir, compileItem.include);
-        const fileUri = vscode.Uri.file(filePath);
-        try {
-            await vscode.workspace.fs.delete(fileUri, { useTrash: true });
-        } catch (err) {
-            console.warn(`删除文件失败: ${filePath}`, err);
-        }
     }
 
     static async addExistingFile(

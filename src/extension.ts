@@ -4,6 +4,7 @@ import { ProjectTreeProvider } from './tree/ProjectTreeProvider';
 import { ProjectDiscovery } from './services/ProjectDiscovery';
 import { CsprojService } from './services/CsprojService';
 import { FileTemplateService } from './services/FileTemplateService';
+import { FileService } from './services/FileService';
 import { ProjectNode } from './models/ProjectNode';
 import * as path from 'path';
 
@@ -89,7 +90,7 @@ export function activate(context: vscode.ExtensionContext) {
             if (confirm !== '确定删除') return;
 
             try {
-                await CsprojService.deleteFile(node.projectPath, node.compile);
+                await FileService.deleteFile(node.projectPath, node.compile);
                 vscode.window.showInformationMessage(`已删除: ${fileName}`);
                 vscode.commands.executeCommand('csharpsolution.refresh');
             } catch (err) {
