@@ -120,15 +120,17 @@ suite('FileService', () => {
         await fs.promises.mkdir(subDir, { recursive: true });
         await fs.promises.writeFile(path.join(subDir, 'OldModel.cs'), 'class OldModel { }', 'utf-8');
 
-        // Update csproj to point to subdirectory
-        const csprojWithSubdir = csprojContent.replace('OldName.cs', 'Models\\OldModel.cs');
+        // Update csproj to point to subdirectory (use OS-native separator)
+        const includePath = path.join('Models', 'OldModel.cs');
+        const newIncludePath = path.join('Models', 'NewModel.cs');
+        const csprojWithSubdir = csprojContent.replace('OldName.cs', includePath);
         await fs.promises.writeFile(projectPath, csprojWithSubdir, 'utf-8');
 
-        const compileItem: CompileItem = { include: 'Models\\OldModel.cs' };
+        const compileItem: CompileItem = { include: includePath };
         await FileService.renameFile(projectPath, compileItem, 'NewModel');
 
         const csproj = await fs.promises.readFile(projectPath, 'utf-8');
-        assert.ok(csproj.includes('Models\\NewModel.cs'));
+        assert.ok(csproj.includes(newIncludePath));
     });
 
     test('renameFile 同步更新 struct 声明', async () => {
