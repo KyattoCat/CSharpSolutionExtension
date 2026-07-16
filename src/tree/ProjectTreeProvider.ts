@@ -29,52 +29,52 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
     }
 
     getTreeItem(node: ProjectNode): vscode.TreeItem {
+        let item: vscode.TreeItem;
         switch (node.type) {
             case 'project':
-                return this.projectTreeItem(node.project, !!node.solutionPath);
+                item = this.projectTreeItem(node.project, !!node.solutionPath);
+                break;
             case 'solution':
-                return this.solutionTreeItem(node.solution);
+                item = this.solutionTreeItem(node.solution);
+                break;
             case 'refGroup':
-                return this.folderTreeItem('引用', vscode.TreeItemCollapsibleState.Expanded);
+                item = this.folderTreeItem('引用', vscode.TreeItemCollapsibleState.Expanded);
+                item.id = `refGroup:${node.projectPath}`;
+                break;
             case 'refSubGroup':
-                return this.folderTreeItem(node.label, vscode.TreeItemCollapsibleState.Collapsed);
+                item = this.folderTreeItem(node.label, vscode.TreeItemCollapsibleState.Collapsed);
+                item.id = `refSub:${node.projectPath}:${node.label}`;
+                break;
             case 'reference':
-                return this.leafTreeItem(
-                    node.item.include,
-                    node.item.hintPath || '',
-                    'reference'
-                );
+                item = this.leafTreeItem(node.item.include, node.item.hintPath || '', 'reference');
+                item.id = `ref:${node.projectPath}:${node.item.include}`;
+                break;
             case 'projectRef':
-                return this.leafTreeItem(
-                    node.item.name || path.basename(node.item.include, '.csproj'),
-                    node.item.include,
-                    'reference'
-                );
+                item = this.leafTreeItem(node.item.name || path.basename(node.item.include, '.csproj'), node.item.include, 'reference');
+                item.id = `projRef:${node.projectPath}:${node.item.include}`;
+                break;
             case 'package':
-                return this.leafTreeItem(
-                    `${node.item.id} v${node.item.version}`,
-                    node.item.targetFramework || '',
-                    'package'
-                );
+                item = this.leafTreeItem(`${node.item.id} v${node.item.version}`, node.item.targetFramework || '', 'package');
+                item.id = `pkg:${node.projectPath}:${node.item.id}`;
+                break;
             case 'analyzer':
-                return this.leafTreeItem(
-                    path.basename(node.item.include),
-                    node.item.include,
-                    'reference'
-                );
+                item = this.leafTreeItem(path.basename(node.item.include), node.item.include, 'reference');
+                item.id = `analyzer:${node.projectPath}:${node.item.include}`;
+                break;
             case 'folder': {
-                const item = this.folderTreeItem(
-                    path.basename(node.relPath) || node.relPath,
-                    vscode.TreeItemCollapsibleState.Collapsed
-                );
+                item = this.folderTreeItem(path.basename(node.relPath) || node.relPath, vscode.TreeItemCollapsibleState.Collapsed);
                 item.contextValue = 'dirFolder';
-                return item;
+                item.id = `dir:${node.projectPath}:${node.relPath}`;
+                break;
             }
             case 'file':
-                return this.fileTreeItem(node.compile, node.projectPath);
+                item = this.fileTreeItem(node.compile, node.projectPath);
+                break;
             default:
-                return new vscode.TreeItem('unknown', vscode.TreeItemCollapsibleState.None);
+                item = new vscode.TreeItem('unknown', vscode.TreeItemCollapsibleState.None);
+                break;
         }
+        return item;
     }
 
     getChildren(node?: ProjectNode): ProjectNode[] | undefined {
@@ -184,6 +184,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
             solution.name,
             vscode.TreeItemCollapsibleState.Expanded
         );
+        item.id = `sln:${solution.path}`;
         item.contextValue = 'solution';
         item.tooltip = solution.path;
         item.description = `${solution.projects.length} 个项目`;
@@ -201,6 +202,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
             project.name,
             vscode.TreeItemCollapsibleState.Expanded
         );
+        item.id = `proj:${project.path}`;
         item.contextValue = isSolutionChild ? 'solutionProject' : 'project';
         item.tooltip = project.path;
         item.description = this.relativePath(project.path);
@@ -244,6 +246,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
             title: 'Open File',
             arguments: [vscode.Uri.file(absPath)],
         };
+        item.id = `file:${absPath}`;
         item.contextValue = 'file';
         item.tooltip = compile.include;
 
