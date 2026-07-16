@@ -401,18 +401,6 @@ export function activate(context: vscode.ExtensionContext) {
     slnxWatcher.onDidDelete(debouncedRefresh);
     context.subscriptions.push(slnxWatcher);
 
-    // --- 编辑器切换时自动选中树节点 ---
-    context.subscriptions.push(
-        vscode.window.onDidChangeActiveTextEditor(editor => {
-            if (editor?.document.uri.scheme === 'file') {
-                const node = treeProvider.findNodeByUri(editor.document.uri);
-                if (node) {
-                    treeView.reveal(node, { select: true, focus: false, expand: true });
-                }
-            }
-        })
-    );
-
     // --- 初始扫描 ---
     vscode.commands.executeCommand('csharpsolution.refresh');
 }
