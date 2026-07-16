@@ -47,3 +47,15 @@ export interface AnalyzerItem {
     /** Include 属性值 */
     include: string;
 }
+
+export interface Solution {
+    name: string;
+    path: string;
+    projects: SolutionProject[];
+}
+
+export interface SolutionProject {
+    name: string;
+    relPath: string;
+    guid: string;
+}
