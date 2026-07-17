@@ -376,4 +376,44 @@ suite('FileService', () => {
         assert.ok(!csproj.includes('BackDir\\C.cs'));
         assert.ok(csproj.includes('Keep2.cs'));
     });
+
+    test('deleteFolder 不误删同名前缀的兄弟目录条目', async () => {
+        const subDir = path.join(tmpDir, 'ToRemove');
+        const siblingDir = path.join(tmpDir, 'ToRemoveExtra');
+        await fs.promises.mkdir(subDir, { recursive: true });
+        await fs.promises.mkdir(siblingDir, { recursive: true });
+        await fs.promises.writeFile(path.join(subDir, 'A.cs'), 'class A { }', 'utf-8');
+        await fs.promises.writeFile(path.join(siblingDir, 'X.cs'), 'class X { }', 'utf-8');
+
+        const csprojSibling = `<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Compile Include="ToRemove/A.cs" />
+    <Compile Include="ToRemoveExtra/X.cs" />
+  </ItemGroup>
+</Project>`;
+        await fs.promises.writeFile(projectPath, csprojSibling, 'utf-8');
+
+        const compiles = [
+            { include: 'ToRemove/A.cs' },
+            { include: 'ToRemoveExtra/X.cs' },
+        ];
+        const removed = await FileService.deleteFolder(projectPath, 'ToRemove', compiles);
+
+        assert.strictEqual(removed, 1);
+        const csproj = await fs.promises.readFile(projectPath, 'utf-8');
+        assert.ok(!csproj.includes('ToRemove/A.cs'));
+        assert.ok(csproj.includes('ToRemoveExtra/X.cs'));
+    });
+
+    test('deleteFolder 拒绝空路径等退化输入且不删除项目目录', async () => {
+        await assert.rejects(
+            () => FileService.deleteFolder(projectPath, '', [{ include: 'OldName.cs' }]),
+            /Invalid folder path/
+        );
+
+        // 项目目录与 csproj 均未受影响
+        await fs.promises.access(tmpDir);
+        const csproj = await fs.promises.readFile(projectPath, 'utf-8');
+        assert.ok(csproj.includes('OldName.cs'));
+    });
 });

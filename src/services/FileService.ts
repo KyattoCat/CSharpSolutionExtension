@@ -190,14 +190,18 @@ export class FileService {
 
     /**
      * 删除文件夹：从非 SDK 项目的 .csproj 中移除文件夹下全部 Compile 条目，
-     * 并将物理目录移至回收站。返回移除的条目数。
+     * 并将物理目录移至回收站。返回值为模型中匹配的条目数
+     * （即匹配的 CompileItem 数量，不校验 XML 中是否实际发生移除）。
      */
     static async deleteFolder(
         projectPath: string,
         folderRelPath: string,
         compiles: CompileItem[]
     ): Promise<number> {
-        const normalizedFolder = folderRelPath.replace(/\\/g, '/');
+        const normalizedFolder = folderRelPath.replace(/\\/g, '/').replace(/\/+$/, '');
+        if (!normalizedFolder || normalizedFolder === '.') {
+            throw new Error(`Invalid folder path: ${folderRelPath}`);
+        }
         const prefix = normalizedFolder + '/';
 
         // 前缀匹配筛出文件夹下所有条目（POSIX 归一化比较）
@@ -219,7 +223,7 @@ export class FileService {
 
         // 整个目录进回收站
         const projectDir = path.dirname(projectPath);
-        const dirAbsPath = path.join(projectDir, folderRelPath);
+        const dirAbsPath = path.join(projectDir, normalizedFolder);
         try {
             await vscode.workspace.fs.delete(vscode.Uri.file(dirAbsPath), {
                 recursive: true,
