@@ -44,6 +44,26 @@
         "title": "添加类..."
       },
       {
+        "command": "csharpsolution.addInterface",
+        "title": "添加接口..."
+      },
+      {
+        "command": "csharpsolution.addEnum",
+        "title": "添加枚举..."
+      },
+      {
+        "command": "csharpsolution.addStruct",
+        "title": "添加结构体..."
+      },
+      {
+        "command": "csharpsolution.addFolder",
+        "title": "新建文件夹..."
+      },
+      {
+        "command": "csharpsolution.excludeFromProject",
+        "title": "从项目排除"
+      },
+      {
         "command": "csharpsolution.deleteFile",
         "title": "删除"
       },
@@ -92,6 +112,12 @@
         "title": "在集成终端中打开"
       }
     ],
+    "submenus": [
+      {
+        "id": "csharpsolution.addFileMenu",
+        "label": "新增文件"
+      }
+    ],
     "menus": {
       "view/title": [
         {
@@ -102,19 +128,29 @@
       ],
       "view/item/context": [
         {
-          "command": "csharpsolution.addClass",
+          "submenu": "csharpsolution.addFileMenu",
           "when": "view == csharpsolution-projects && viewItem == project",
           "group": "navigation@1"
         },
         {
-          "command": "csharpsolution.addExistingFile",
+          "submenu": "csharpsolution.addFileMenu",
+          "when": "view == csharpsolution-projects && viewItem == dirFolder",
+          "group": "navigation@1"
+        },
+        {
+          "command": "csharpsolution.addFolder",
           "when": "view == csharpsolution-projects && viewItem == project",
           "group": "navigation@2"
         },
         {
-          "command": "csharpsolution.addClass",
+          "command": "csharpsolution.addFolder",
           "when": "view == csharpsolution-projects && viewItem == dirFolder",
-          "group": "navigation@1"
+          "group": "navigation@2"
+        },
+        {
+          "command": "csharpsolution.addExistingFile",
+          "when": "view == csharpsolution-projects && viewItem == project",
+          "group": "navigation@3"
         },
         {
           "command": "csharpsolution.deleteFile",
@@ -217,6 +253,16 @@
           "group": "group4@1"
         },
         {
+          "command": "csharpsolution.revealInExplorer",
+          "when": "view == csharpsolution-projects && viewItem == linkedFile",
+          "group": "group4@1"
+        },
+        {
+          "command": "csharpsolution.revealInExplorer",
+          "when": "view == csharpsolution-projects && viewItem == linkedFolder",
+          "group": "group4@1"
+        },
+        {
           "command": "csharpsolution.openInTerminal",
           "when": "view == csharpsolution-projects && viewItem == project",
           "group": "group4@2"
@@ -242,6 +288,16 @@
           "group": "group4@2"
         },
         {
+          "command": "csharpsolution.openInTerminal",
+          "when": "view == csharpsolution-projects && viewItem == linkedFile",
+          "group": "group4@2"
+        },
+        {
+          "command": "csharpsolution.openInTerminal",
+          "when": "view == csharpsolution-projects && viewItem == linkedFolder",
+          "group": "group4@2"
+        },
+        {
           "command": "csharpsolution.renameFile",
           "when": "view == csharpsolution-projects && viewItem == dirFolder",
           "group": "navigation@3"
@@ -250,6 +306,44 @@
           "command": "csharpsolution.deleteFile",
           "when": "view == csharpsolution-projects && viewItem == dirFolder",
           "group": "navigation@4"
+        },
+        {
+          "command": "csharpsolution.excludeFromProject",
+          "when": "view == csharpsolution-projects && viewItem == file",
+          "group": "group5@1"
+        },
+        {
+          "command": "csharpsolution.excludeFromProject",
+          "when": "view == csharpsolution-projects && viewItem == dirFolder",
+          "group": "group5@1"
+        },
+        {
+          "command": "csharpsolution.excludeFromProject",
+          "when": "view == csharpsolution-projects && viewItem == linkedFile",
+          "group": "group5@1"
+        },
+        {
+          "command": "csharpsolution.excludeFromProject",
+          "when": "view == csharpsolution-projects && viewItem == linkedFolder",
+          "group": "group5@1"
+        }
+      ],
+      "csharpsolution.addFileMenu": [
+        {
+          "command": "csharpsolution.addClass",
+          "group": "1_add@1"
+        },
+        {
+          "command": "csharpsolution.addInterface",
+          "group": "1_add@2"
+        },
+        {
+          "command": "csharpsolution.addEnum",
+          "group": "1_add@3"
+        },
+        {
+          "command": "csharpsolution.addStruct",
+          "group": "1_add@4"
         }
       ]
     },
