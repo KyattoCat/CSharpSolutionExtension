@@ -604,4 +604,31 @@ suite('FileService', () => {
         const csproj = await fs.promises.readFile(projectPath, 'utf-8');
         assert.strictEqual(csproj, csprojContent);
     });
+
+    test('deleteFolder 物理删除失败时回滚 csproj', async () => {
+        // csproj 有条目，但物理目录不存在 → workspace.fs.delete 抛 FileNotFound
+        const csprojGhost = `<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Compile Include="GhostDir/G.cs" />
+    <Compile Include="Stay.cs" />
+  </ItemGroup>
+</Project>`;
+        await fs.promises.writeFile(projectPath, csprojGhost, 'utf-8');
+        await fs.promises.writeFile(path.join(tmpDir, 'Stay.cs'), 'class Stay { }', 'utf-8');
+        // 注意：不创建 GhostDir 物理目录
+
+        const compiles = [
+            { include: 'GhostDir/G.cs' },
+            { include: 'Stay.cs' },
+        ];
+
+        await assert.rejects(
+            () => FileService.deleteFolder(projectPath, 'GhostDir', compiles),
+            /Failed to delete folder/
+        );
+
+        // csproj 已回滚为原内容
+        const csproj = await fs.promises.readFile(projectPath, 'utf-8');
+        assert.strictEqual(csproj, csprojGhost);
+    });
 });

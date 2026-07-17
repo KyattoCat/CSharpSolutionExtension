@@ -232,13 +232,19 @@ export class FileService {
             await fs.promises.writeFile(projectPath, updated, 'utf-8');
         }
 
-        // 整个目录进回收站；物理删除失败时抛错，由上层如实报告（避免误报「已删除」）
+        // 整个目录进回收站；物理删除失败时回滚 csproj 并抛错，由上层如实报告
         try {
             await vscode.workspace.fs.delete(vscode.Uri.file(dirAbsResolved), {
                 recursive: true,
                 useTrash: true,
             });
         } catch (err) {
+            if (!isSdk && targets.length > 0) {
+                // 回滚 csproj 为原内容；回滚自身失败不掩盖原始错误
+                try {
+                    await fs.promises.writeFile(projectPath, csprojContent, 'utf-8');
+                } catch { /* ignore */ }
+            }
             throw new Error(
                 `Failed to delete folder: ${normalizedFolder} (${err instanceof Error ? err.message : String(err)})`
             );
