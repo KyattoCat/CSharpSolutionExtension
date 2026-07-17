@@ -1,4 +1,57 @@
+export type TypeKind = 'class' | 'interface' | 'enum' | 'struct';
+
 export class FileTemplateService {
+
+    private static readonly TYPE_TEMPLATES: Record<TypeKind, string[]> = {
+        class: [
+            'using System;',
+            '',
+            'namespace {namespace}',
+            '{',
+            '    public class {className}',
+            '    {',
+            '        ',
+            '    }',
+            '}',
+            '',
+        ],
+        interface: [
+            'using System;',
+            '',
+            'namespace {namespace}',
+            '{',
+            '    public interface {className}',
+            '    {',
+            '        ',
+            '    }',
+            '}',
+            '',
+        ],
+        enum: [
+            'using System;',
+            '',
+            'namespace {namespace}',
+            '{',
+            '    public enum {className}',
+            '    {',
+            '        ',
+            '    }',
+            '}',
+            '',
+        ],
+        struct: [
+            'using System;',
+            '',
+            'namespace {namespace}',
+            '{',
+            '    public struct {className}',
+            '    {',
+            '        ',
+            '    }',
+            '}',
+            '',
+        ],
+    };
 
     /** 根据模板生成 C# 类文件内容 */
     static generate(
@@ -12,6 +65,11 @@ export class FileTemplateService {
                     .replace(/\{className\}/g, className)
             )
             .join('\n');
+    }
+
+    /** 按类型生成 C# 代码（模板硬编码；class 模板与原 DEFAULT_CLASS_TEMPLATE 一致） */
+    static generateByKind(namespace: string, name: string, kind: TypeKind): string {
+        return this.generate(namespace, name, this.TYPE_TEMPLATES[kind]);
     }
 
     /**

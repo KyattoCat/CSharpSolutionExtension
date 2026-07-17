@@ -44,4 +44,19 @@ suite('FileTemplateService', () => {
         assert.ok(!FileTemplateService.isValidClassName(''));
         assert.ok(!FileTemplateService.isValidClassName('   '));
     });
+
+    test('generateByKind 生成四种类型', () => {
+        const cls = FileTemplateService.generateByKind('My.App', 'Foo', 'class');
+        assert.ok(cls.includes('namespace My.App'));
+        assert.ok(cls.includes('public class Foo'));
+
+        const itf = FileTemplateService.generateByKind('My.App', 'IFoo', 'interface');
+        assert.ok(itf.includes('public interface IFoo'));
+
+        const enm = FileTemplateService.generateByKind('My.App', 'Color', 'enum');
+        assert.ok(enm.includes('public enum Color'));
+
+        const stc = FileTemplateService.generateByKind('My.App', 'Point', 'struct');
+        assert.ok(stc.includes('public struct Point'));
+    });
 });
