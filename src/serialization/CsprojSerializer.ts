@@ -4,6 +4,11 @@ import * as fs from 'fs';
 
 export class CsprojSerializer {
 
+    /** 判断是否为 SDK 风格项目（<Project Sdk="...">） */
+    static isSdk(xml: string): boolean {
+        return /<Project\s+Sdk="[^"]*"/.test(xml);
+    }
+
     /**
      * 解析 .csproj 文件内容为 CsprojProject 模型。
      * 使用正则表达式逐类提取，不依赖外部 XML 库。
@@ -11,7 +16,7 @@ export class CsprojSerializer {
      */
     static parse(xml: string, filePath: string): CsprojProject {
         const name = path.basename(filePath, '.csproj');
-        const isSdk = /<Project\s+Sdk="[^"]*"/.test(xml);
+        const isSdk = this.isSdk(xml);
 
         if (isSdk) {
             return this.parseSdk(xml, filePath, name);

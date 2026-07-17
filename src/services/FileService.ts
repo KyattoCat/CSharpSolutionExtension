@@ -31,7 +31,7 @@ export class FileService {
         }
 
         const csprojContent = await fs.promises.readFile(projectPath, 'utf-8');
-        const isSdk = /<Project\s+Sdk="[^"]*"/.test(csprojContent);
+        const isSdk = CsprojSerializer.isSdk(csprojContent);
         if (isSdk) {
             const targetDir = path.dirname(newAbsPath);
             await fs.promises.mkdir(targetDir, { recursive: true });
@@ -89,7 +89,7 @@ export class FileService {
         compileItem: CompileItem
     ): Promise<void> {
         const csprojContent = await fs.promises.readFile(projectPath, 'utf-8');
-        const isSdk = /<Project\s+Sdk="[^"]*"/.test(csprojContent);
+        const isSdk = CsprojSerializer.isSdk(csprojContent);
         if (isSdk) {
             const projectDir = path.dirname(projectPath);
             const filePath = path.join(projectDir, compileItem.include);
@@ -148,7 +148,7 @@ export class FileService {
 
         // 3. 读取 .csproj 判断是否为 SDK 项目
         const csprojContent = await fs.promises.readFile(projectPath, 'utf-8');
-        const isSdk = /<Project\s+Sdk="[^"]*"/.test(csprojContent);
+        const isSdk = CsprojSerializer.isSdk(csprojContent);
 
         // 4. 非 SDK 项目：先计算更新后的 .csproj 内容（在移动文件前完成校验，避免回滚）。
         //    传统 .csproj 通常使用反斜杠分隔符，先按原样匹配，失败后翻转分隔符重试，
@@ -222,7 +222,7 @@ export class FileService {
         });
 
         const csprojContent = await fs.promises.readFile(projectPath, 'utf-8');
-        const isSdk = /<Project\s+Sdk="[^"]*"/.test(csprojContent);
+        const isSdk = CsprojSerializer.isSdk(csprojContent);
 
         if (!isSdk && targets.length > 0) {
             let updated = csprojContent;
@@ -304,7 +304,7 @@ export class FileService {
 
         // 2. 非 SDK 项目：内存中批量计算 csproj 更新（沿用 moveFile 的分隔符策略）
         const csprojContent = await fs.promises.readFile(projectPath, 'utf-8');
-        const isSdk = /<Project\s+Sdk="[^"]*"/.test(csprojContent);
+        const isSdk = CsprojSerializer.isSdk(csprojContent);
 
         let updatedContent: string | undefined;
         if (!isSdk) {

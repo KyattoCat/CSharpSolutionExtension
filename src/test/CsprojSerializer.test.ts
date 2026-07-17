@@ -323,4 +323,10 @@ suite('CsprojSerializer — parse', () => {
         const project = CsprojSerializer.parse(xml, '/fake/SdkProject.csproj');
         assert.strictEqual(project.isSdk, true);
     });
+
+    test('isSdk 识别 SDK 风格项目', () => {
+        assert.strictEqual(CsprojSerializer.isSdk('<Project Sdk="Microsoft.NET.Sdk">'), true);
+        assert.strictEqual(CsprojSerializer.isSdk('<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">'), false);
+        assert.strictEqual(CsprojSerializer.isSdk(''), false);
+    });
 });

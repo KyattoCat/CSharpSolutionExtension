@@ -44,7 +44,7 @@ export class CsprojService {
         await fs.promises.writeFile(fileAbsPath, classContent, 'utf-8');
 
         const csprojContent = await fs.promises.readFile(projectPath, 'utf-8');
-        const isSdk = /<Project\s+Sdk="[^"]*"/.test(csprojContent);
+        const isSdk = CsprojSerializer.isSdk(csprojContent);
         if (!isSdk) {
             const updatedContent = CsprojSerializer.addCompile(csprojContent, fileRelPath);
             await fs.promises.writeFile(projectPath, updatedContent, 'utf-8');
