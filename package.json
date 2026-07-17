@@ -86,6 +86,10 @@
       {
         "command": "csharpsolution.revealInExplorer",
         "title": "在文件资源管理器中显示"
+      },
+      {
+        "command": "csharpsolution.openInTerminal",
+        "title": "在集成终端中打开"
       }
     ],
     "menus": {
@@ -211,9 +215,56 @@
           "command": "csharpsolution.revealInExplorer",
           "when": "view == csharpsolution-projects && viewItem == dirFolder",
           "group": "group4@1"
+        },
+        {
+          "command": "csharpsolution.openInTerminal",
+          "when": "view == csharpsolution-projects && viewItem == project",
+          "group": "group4@2"
+        },
+        {
+          "command": "csharpsolution.openInTerminal",
+          "when": "view == csharpsolution-projects && viewItem == solutionProject",
+          "group": "group4@2"
+        },
+        {
+          "command": "csharpsolution.openInTerminal",
+          "when": "view == csharpsolution-projects && viewItem == solution",
+          "group": "group4@2"
+        },
+        {
+          "command": "csharpsolution.openInTerminal",
+          "when": "view == csharpsolution-projects && viewItem == dirFolder",
+          "group": "group4@2"
+        },
+        {
+          "command": "csharpsolution.openInTerminal",
+          "when": "view == csharpsolution-projects && viewItem == file",
+          "group": "group4@2"
+        },
+        {
+          "command": "csharpsolution.renameFile",
+          "when": "view == csharpsolution-projects && viewItem == dirFolder",
+          "group": "navigation@3"
+        },
+        {
+          "command": "csharpsolution.deleteFile",
+          "when": "view == csharpsolution-projects && viewItem == dirFolder",
+          "group": "navigation@4"
         }
       ]
     },
+    "keybindings": [
+      {
+        "command": "csharpsolution.deleteFile",
+        "key": "delete",
+        "when": "focusedView == csharpsolution-projects"
+      },
+      {
+        "command": "csharpsolution.renameFile",
+        "key": "f2",
+        "when": "focusedView == csharpsolution-projects"
+      }
+    ],
     "configuration": {
       "title": "C# Project Manager",
       "properties": {
