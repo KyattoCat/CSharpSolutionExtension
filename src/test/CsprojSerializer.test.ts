@@ -354,6 +354,46 @@ suite('CsprojSerializer — parse', () => {
         assert.deepStrictEqual(project.folders, ['Empty']);
     });
 
+    test('addFolder 追加到已有 Folder 块之后', () => {
+        const xml = `<Project>
+  <ItemGroup>
+    <Folder Include="A\\" />
+  </ItemGroup>
+</Project>`;
+        const result = CsprojSerializer.addFolder(xml, 'B/C');
+        assert.ok(result.includes('<Folder Include="B\\C\\" />'));
+        assert.ok(result.indexOf('A\\') < result.indexOf('B\\C\\'));
+    });
+
+    test('addFolder 无 Folder 块时新建 ItemGroup', () => {
+        const xml = `<Project>\n</Project>`;
+        const result = CsprojSerializer.addFolder(xml, 'New');
+        assert.ok(result.includes('<Folder Include="New\\" />'));
+        assert.ok(result.includes('<ItemGroup>'));
+    });
+
+    test('addFolder 重复条目返回原 xml（归一化比较）', () => {
+        const xml = `<Project><ItemGroup><Folder Include="A\\B\\" /></ItemGroup></Project>`;
+        assert.strictEqual(CsprojSerializer.addFolder(xml, 'A/B'), xml);
+    });
+
+    test('addCompileRemove 追加 Remove 条目', () => {
+        const xml = `<Project Sdk="Microsoft.NET.Sdk">\n</Project>`;
+        const result = CsprojSerializer.addCompileRemove(xml, 'Sub/File.cs');
+        assert.ok(result.includes('<Compile Remove="Sub/File.cs" />'));
+        assert.ok(result.includes('<ItemGroup>'));
+    });
+
+    test('addCompileRemove 追加到已有 Remove 块之后', () => {
+        const xml = `<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <Compile Remove="Old.cs" />
+  </ItemGroup>
+</Project>`;
+        const result = CsprojSerializer.addCompileRemove(xml, 'New.cs');
+        assert.ok(result.indexOf('Old.cs') < result.indexOf('<Compile Remove="New.cs" />'));
+    });
+
     test('parseSdk 收集空目录到 folders', () => {
         // 临时目录：EmptyDir（空）、Src/HasFile.cs
         const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'csproj-sdk-folders-'));

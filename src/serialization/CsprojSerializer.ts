@@ -306,6 +306,47 @@ export class CsprojSerializer {
     }
 
     /**
+     * 向 .csproj 添加 <Folder Include="Sub\" /> 条目（反斜杠 + 尾部分隔符风格，与 VS 一致）。
+     * 已有同路径条目（分隔符归一化比较）则返回原 xml。
+     */
+    static addFolder(xml: string, folderRelPath: string): string {
+        const normalized = folderRelPath.replace(/\\/g, '/').replace(/\/+$/, '');
+        if (this.parseFolders(xml).includes(normalized)) {
+            return xml;
+        }
+
+        const includeValue = normalized.replace(/\//g, '\\') + '\\';
+        const newLine = `    <Folder Include="${includeValue}" />`;
+        return this.insertItemLine(xml, /^\s*<Folder\s+Include="[^"]*"/gm, newLine);
+    }
+
+    /** SDK 项目排除：添加 <Compile Remove="..." /> 条目 */
+    static addCompileRemove(xml: string, relPath: string): string {
+        const newLine = `    <Compile Remove="${relPath}" />`;
+        return this.insertItemLine(xml, /^\s*<Compile\s+Remove="[^"]*"/gm, newLine);
+    }
+
+    /** 在最后一个匹配 blockRegex 的自闭合条目行后插入 newLine；无匹配则在 </Project> 前新建 ItemGroup */
+    private static insertItemLine(xml: string, blockRegex: RegExp, newLine: string): string {
+        const matches = [...xml.matchAll(blockRegex)];
+        if (matches.length > 0) {
+            const lastMatch = matches[matches.length - 1];
+            const startIndex = lastMatch.index!;
+            const rest = xml.slice(startIndex);
+            let insertPos = startIndex + rest.indexOf('/>') + 2;
+            const newlineAfter = xml.indexOf('\n', insertPos);
+            insertPos = newlineAfter !== -1 ? newlineAfter + 1 : xml.length;
+            return xml.slice(0, insertPos) + newLine + '\n' + xml.slice(insertPos);
+        }
+        const projectClose = xml.lastIndexOf('</Project>');
+        const itemGroup = `  <ItemGroup>\n${newLine}\n  </ItemGroup>\n`;
+        if (projectClose !== -1) {
+            return xml.slice(0, projectClose) + itemGroup + xml.slice(projectClose);
+        }
+        return xml + '\n' + itemGroup;
+    }
+
+    /**
      * 从 .csproj 内容中移除指定 Include 的 <Compile> 元素。
      * 同时处理自闭合和带子元素两种形式。
      */
