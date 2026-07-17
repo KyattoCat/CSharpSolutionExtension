@@ -131,17 +131,7 @@
       "view/item/context": [
         {
           "submenu": "csharpsolution.addFileMenu",
-          "when": "view == csharpsolution-projects && viewItem == project",
-          "group": "navigation@1"
-        },
-        {
-          "submenu": "csharpsolution.addFileMenu",
-          "when": "view == csharpsolution-projects && viewItem == dirFolder",
-          "group": "navigation@1"
-        },
-        {
-          "submenu": "csharpsolution.addFileMenu",
-          "when": "view == csharpsolution-projects && viewItem == solutionProject",
+          "when": "view == csharpsolution-projects && (viewItem == project || viewItem == solutionProject || viewItem == dirFolder)",
           "group": "navigation@1"
         },
         {
