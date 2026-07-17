@@ -32,6 +32,7 @@ export class CsprojSerializer {
             projectReferences: this.parseProjectReferences(xml),
             packages: [],
             analyzers: this.parseAnalyzers(xml),
+            folders: this.parseFolders(xml),
         };
     }
 
@@ -44,6 +45,7 @@ export class CsprojSerializer {
             projectReferences: this.parseProjectReferences(xml),
             packages: this.parsePackageReferences(xml),
             analyzers: this.parseAnalyzers(xml),
+            folders: this.collectEmptyDirs(projectDir),
         };
     }
 
@@ -91,6 +93,33 @@ export class CsprojSerializer {
             }
         } catch { /* dir not readable */ }
         return results;
+    }
+
+    /** 收集子树中不含任何 .cs 文件的目录（POSIX 相对路径，含嵌套空目录），跳过 bin/obj/node_modules */
+    private static collectEmptyDirs(root: string): string[] {
+        const result: string[] = [];
+        const walk = (dir: string): boolean => { // 返回子树是否含 .cs
+            let hasCs = false;
+            try {
+                const entries = fs.readdirSync(dir, { withFileTypes: true });
+                for (const entry of entries) {
+                    if (entry.isDirectory()) {
+                        if (entry.name === 'bin' || entry.name === 'obj' || entry.name === 'node_modules') continue;
+                        const full = path.join(dir, entry.name);
+                        const childHas = walk(full);
+                        if (!childHas) {
+                            result.push(path.relative(root, full).replace(/\\/g, '/'));
+                        }
+                        hasCs = hasCs || childHas;
+                    } else if (entry.name.endsWith('.cs')) {
+                        hasCs = true;
+                    }
+                }
+            } catch { /* dir not readable */ }
+            return hasCs;
+        };
+        walk(root);
+        return result.sort((a, b) => a.localeCompare(b));
     }
 
     private static matchesGlob(relPath: string, patterns: string[]): boolean {
@@ -213,6 +242,20 @@ export class CsprojSerializer {
         let match: RegExpExecArray | null;
         while ((match = regex.exec(xml)) !== null) {
             results.push({ include: match[1] });
+        }
+        return results;
+    }
+
+    /** 解析 <Folder Include="Sub\" /> 条目，返回 POSIX 风格、去尾部分隔符的路径列表 */
+    static parseFolders(xml: string): string[] {
+        const results: string[] = [];
+        const regex = /<Folder\s+Include="([^"]*)"[^>]*\/?>/g;
+        let match: RegExpExecArray | null;
+        while ((match = regex.exec(xml)) !== null) {
+            const normalized = match[1].replace(/\\/g, '/').replace(/\/+$/, '');
+            if (normalized) {
+                results.push(normalized);
+            }
         }
         return results;
     }

@@ -1,4 +1,7 @@
 import * as assert from 'assert';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import { CsprojSerializer } from '../serialization/CsprojSerializer';
 
 suite('CsprojSerializer — parse', () => {
@@ -328,5 +331,44 @@ suite('CsprojSerializer — parse', () => {
         assert.strictEqual(CsprojSerializer.isSdk('<Project Sdk="Microsoft.NET.Sdk">'), true);
         assert.strictEqual(CsprojSerializer.isSdk('<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">'), false);
         assert.strictEqual(CsprojSerializer.isSdk(''), false);
+    });
+
+    test('parseFolders 解析 Folder 条目并归一化', () => {
+        const xml = `<Project><ItemGroup>
+    <Folder Include="Empty\\" />
+    <Folder Include="A\\B\\" />
+    <Folder Include="Posix/C/" />
+  </ItemGroup></Project>`;
+        assert.deepStrictEqual(CsprojSerializer.parseFolders(xml), ['Empty', 'A/B', 'Posix/C']);
+    });
+
+    test('parseFolders 无 Folder 条目返回空数组', () => {
+        assert.deepStrictEqual(CsprojSerializer.parseFolders('<Project></Project>'), []);
+    });
+
+    test('parseLegacy 填充 folders 字段', () => {
+        const xml = `<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup><Folder Include="Empty\\" /></ItemGroup>
+</Project>`;
+        const project = CsprojSerializer.parse(xml, 'C:/proj/Test.csproj');
+        assert.deepStrictEqual(project.folders, ['Empty']);
+    });
+
+    test('parseSdk 收集空目录到 folders', () => {
+        // 临时目录：EmptyDir（空）、Src/HasFile.cs
+        const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'csproj-sdk-folders-'));
+        try {
+            fs.mkdirSync(path.join(tmpRoot, 'EmptyDir'));
+            fs.mkdirSync(path.join(tmpRoot, 'Src'));
+            fs.writeFileSync(path.join(tmpRoot, 'Src', 'HasFile.cs'), 'class A { }');
+
+            const project = CsprojSerializer.parse(
+                '<Project Sdk="Microsoft.NET.Sdk"></Project>',
+                path.join(tmpRoot, 'Test.csproj')
+            );
+            assert.deepStrictEqual(project.folders, ['EmptyDir']);
+        } finally {
+            fs.rmSync(tmpRoot, { recursive: true, force: true });
+        }
     });
 });

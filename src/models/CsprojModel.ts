@@ -9,6 +9,8 @@ export interface CsprojProject {
     projectReferences: ProjectReferenceItem[];
     packages: PackageItem[];
     analyzers: AnalyzerItem[];
+    /** 空文件夹列表（POSIX 相对路径）：传统项目来自 <Folder Include>，SDK 项目来自文件系统扫描 */
+    folders: string[];
     /** 是否为 SDK 风格项目（如 Microsoft.NET.Sdk） */
     isSdk?: boolean;
 }
