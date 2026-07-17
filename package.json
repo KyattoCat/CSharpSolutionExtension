@@ -117,7 +117,7 @@
     "submenus": [
       {
         "id": "csharpsolution.addFileMenu",
-        "label": "新增文件"
+        "label": "新建文件"
       }
     ],
     "menus": {
@@ -369,6 +369,17 @@
     "configuration": {
       "title": "C# Project Manager",
       "properties": {
+        "csharpsolution.buildTool": {
+          "type": "string",
+          "enum": ["auto", "dotnet", "msbuild"],
+          "default": "auto",
+          "description": "构建工具：auto 按项目类型选择（传统项目优先 MSBuild），或强制指定"
+        },
+        "csharpsolution.msbuildPath": {
+          "type": "string",
+          "default": "",
+          "description": "msbuild.exe 完整路径（留空则通过 vswhere/PATH 自动探测）"
+        },
         "csharpsolution.vcs": {
           "type": "string",
           "enum": [
