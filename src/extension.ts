@@ -98,23 +98,55 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
-    // --- 删除文件 ---
+    // --- 删除文件/文件夹 ---
     context.subscriptions.push(
-        vscode.commands.registerCommand('csharpsolution.deleteFile', async (node: ProjectNode) => {
-            if (!node || node.type !== 'file') return;
+        vscode.commands.registerCommand('csharpsolution.deleteFile', async (node?: ProjectNode) => {
+            node = node ?? treeView.selection[0];
+            if (!node || (node.type !== 'file' && node.type !== 'folder')) return;
 
-            const fileName = path.basename(node.compile.include);
+            if (node.type === 'file') {
+                const fileName = path.basename(node.compile.include);
+                const confirm = await vscode.window.showWarningMessage(
+                    `确定要删除 "${fileName}" 吗？\n文件将移至回收站，并从项目中移除。`,
+                    { modal: true },
+                    '确定删除'
+                );
+                if (confirm !== '确定删除') return;
+
+                try {
+                    await FileService.deleteFile(node.projectPath, node.compile);
+                    vscode.window.showInformationMessage(`已删除: ${fileName}`);
+                    vscode.commands.executeCommand('csharpsolution.refresh');
+                } catch (err) {
+                    vscode.window.showErrorMessage(
+                        `删除失败: ${err instanceof Error ? err.message : String(err)}`
+                    );
+                }
+                return;
+            }
+
+            // folder 节点
+            const project = treeProvider.allProjects.find(p => p.path === node.projectPath);
+            if (!project) return;
+
+            const folderName = path.basename(node.relPath);
+            const normalizedFolder = node.relPath.replace(/\\/g, '/');
+            const prefix = normalizedFolder + '/';
+            const fileCount = project.compiles.filter(c => {
+                const p = c.include.replace(/\\/g, '/');
+                return p === normalizedFolder || p.startsWith(prefix);
+            }).length;
+
             const confirm = await vscode.window.showWarningMessage(
-                `确定要删除 "${fileName}" 吗？\n文件将移至回收站，并从项目中移除。`,
+                `确定要删除文件夹 "${folderName}" 及其中 ${fileCount} 个文件吗？\n文件夹将移至回收站，并从项目中移除。`,
                 { modal: true },
                 '确定删除'
             );
-
             if (confirm !== '确定删除') return;
 
             try {
-                await FileService.deleteFile(node.projectPath, node.compile);
-                vscode.window.showInformationMessage(`已删除: ${fileName}`);
+                await FileService.deleteFolder(node.projectPath, node.relPath, project.compiles);
+                vscode.window.showInformationMessage(`已删除文件夹: ${folderName}`);
                 vscode.commands.executeCommand('csharpsolution.refresh');
             } catch (err) {
                 vscode.window.showErrorMessage(
@@ -151,35 +183,62 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
-    // --- 重命名文件 ---
+    // --- 重命名文件/文件夹 ---
     context.subscriptions.push(
-        vscode.commands.registerCommand('csharpsolution.renameFile', async (node: ProjectNode) => {
-            if (!node || node.type !== 'file') return;
+        vscode.commands.registerCommand('csharpsolution.renameFile', async (node?: ProjectNode) => {
+            node = node ?? treeView.selection[0];
+            if (!node || (node.type !== 'file' && node.type !== 'folder')) return;
 
-            const oldName = path.basename(node.compile.include, '.cs');
-            const newName = await vscode.window.showInputBox({
-                prompt: '请输入新文件名（不含扩展名）',
-                value: oldName,
-                validateInput: (value) => {
-                    if (!FileTemplateService.isValidClassName(value)) {
-                        if (!value.trim()) return '文件名不能为空';
-                        if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(value.trim())) {
-                            return '文件名必须为合法的 C# 标识符';
+            if (node.type === 'file') {
+                const oldName = path.basename(node.compile.include, '.cs');
+                const newName = await vscode.window.showInputBox({
+                    prompt: '请输入新文件名（不含扩展名）',
+                    value: oldName,
+                    validateInput: (value) => {
+                        if (!FileTemplateService.isValidClassName(value)) {
+                            if (!value.trim()) return '文件名不能为空';
+                            if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(value.trim())) {
+                                return '文件名必须为合法的 C# 标识符';
+                            }
+                            return `"${value}" 是 C# 关键字，不能用作文件名`;
                         }
-                        return `"${value}" 是 C# 关键字，不能用作文件名`;
-                    }
-                    if (value === oldName) return '新文件名与旧文件名相同';
+                        if (value === oldName) return '新文件名与旧文件名相同';
+                        return null;
+                    },
+                });
+                if (!newName) return;
+
+                try {
+                    const config = vscode.workspace.getConfiguration('csharpsolution');
+                    const syncCode = config.get<boolean>('renameSyncCode', true);
+                    await FileService.renameFile(node.projectPath, node.compile, newName, syncCode);
+                    vscode.window.showInformationMessage(`已重命名: ${oldName}.cs → ${newName}.cs`);
+                    vscode.commands.executeCommand('csharpsolution.refresh');
+                } catch (err) {
+                    vscode.window.showErrorMessage(
+                        `重命名失败: ${err instanceof Error ? err.message : String(err)}`
+                    );
+                }
+                return;
+            }
+
+            // folder 节点
+            const oldFolderName = path.basename(node.relPath);
+            const newFolderName = await vscode.window.showInputBox({
+                prompt: '请输入新文件夹名',
+                value: oldFolderName,
+                validateInput: (value) => {
+                    if (!value.trim()) return '文件夹名不能为空';
+                    if (/[/\\:*?"<>|]/.test(value)) return '文件夹名包含非法字符';
+                    if (value === oldFolderName) return '新文件夹名与旧文件夹名相同';
                     return null;
                 },
             });
-
-            if (!newName) return;
+            if (!newFolderName) return;
 
             try {
-                const config = vscode.workspace.getConfiguration('csharpsolution');
-                const syncCode = config.get<boolean>('renameSyncCode', true);
-                await FileService.renameFile(node.projectPath, node.compile, newName, syncCode);
-                vscode.window.showInformationMessage(`已重命名: ${oldName}.cs → ${newName}.cs`);
+                await FileService.renameFolder(node.projectPath, node.relPath, newFolderName);
+                vscode.window.showInformationMessage(`已重命名文件夹: ${oldFolderName} → ${newFolderName}`);
                 vscode.commands.executeCommand('csharpsolution.refresh');
             } catch (err) {
                 vscode.window.showErrorMessage(
@@ -212,6 +271,33 @@ export function activate(context: vscode.ExtensionContext) {
 
             if (filePath) {
                 vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(filePath));
+            }
+        })
+    );
+
+    // --- 在集成终端中打开 ---
+    context.subscriptions.push(
+        vscode.commands.registerCommand('csharpsolution.openInTerminal', async (node: ProjectNode) => {
+            if (!node) return;
+
+            let cwd: string | undefined;
+            switch (node.type) {
+                case 'project':
+                    cwd = path.dirname(node.project.path);
+                    break;
+                case 'solution':
+                    cwd = path.dirname(node.solution.path);
+                    break;
+                case 'folder':
+                    cwd = path.join(path.dirname(node.projectPath), node.relPath);
+                    break;
+                case 'file':
+                    cwd = path.dirname(path.join(path.dirname(node.projectPath), node.compile.include));
+                    break;
+            }
+
+            if (cwd) {
+                vscode.window.createTerminal({ cwd }).show();
             }
         })
     );
