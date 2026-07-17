@@ -416,4 +416,94 @@ suite('FileService', () => {
         const csproj = await fs.promises.readFile(projectPath, 'utf-8');
         assert.ok(csproj.includes('OldName.cs'));
     });
+
+    test('renameFolder 重命名目录并更新 csproj 全部路径', async () => {
+        const subDir = path.join(tmpDir, 'OldDir');
+        await fs.promises.mkdir(path.join(subDir, 'Nested'), { recursive: true });
+        await fs.promises.writeFile(path.join(subDir, 'X.cs'), 'class X { }', 'utf-8');
+        await fs.promises.writeFile(path.join(subDir, 'Nested', 'Y.cs'), 'class Y { }', 'utf-8');
+
+        const csprojDir = `<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Compile Include="OldDir/X.cs" />
+    <Compile Include="OldDir/Nested/Y.cs" />
+  </ItemGroup>
+</Project>`;
+        await fs.promises.writeFile(projectPath, csprojDir, 'utf-8');
+
+        await FileService.renameFolder(projectPath, 'OldDir', 'NewDir');
+
+        // 目录已改名
+        const oldExists = await fs.promises.access(subDir).then(() => true, () => false);
+        const newExists = await fs.promises.access(path.join(tmpDir, 'NewDir', 'X.cs')).then(() => true, () => false);
+        assert.strictEqual(oldExists, false);
+        assert.strictEqual(newExists, true);
+
+        // csproj 路径已更新
+        const csproj = await fs.promises.readFile(projectPath, 'utf-8');
+        assert.ok(csproj.includes('NewDir/X.cs'));
+        assert.ok(csproj.includes('NewDir/Nested/Y.cs'));
+        assert.ok(!csproj.includes('OldDir/'));
+    });
+
+    test('renameFolder 兼容反斜杠分隔符并保持风格', async () => {
+        const subDir = path.join(tmpDir, 'BackOld');
+        await fs.promises.mkdir(subDir, { recursive: true });
+        await fs.promises.writeFile(path.join(subDir, 'Z.cs'), 'class Z { }', 'utf-8');
+
+        const csprojBack = `<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Compile Include="BackOld\\Z.cs" />
+  </ItemGroup>
+</Project>`;
+        await fs.promises.writeFile(projectPath, csprojBack, 'utf-8');
+
+        await FileService.renameFolder(projectPath, 'BackOld', 'BackNew');
+
+        const csproj = await fs.promises.readFile(projectPath, 'utf-8');
+        assert.ok(csproj.includes('BackNew\\Z.cs'), '新路径应保持反斜杠风格');
+        assert.ok(!csproj.includes('BackOld'));
+    });
+
+    test('renameFolder 目标目录已存在时报错且无副作用', async () => {
+        await fs.promises.mkdir(path.join(tmpDir, 'SrcDir'), { recursive: true });
+        await fs.promises.mkdir(path.join(tmpDir, 'DstDir'), { recursive: true });
+        await fs.promises.writeFile(path.join(tmpDir, 'SrcDir', 'S.cs'), 'class S { }', 'utf-8');
+
+        const csprojSrc = `<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Compile Include="SrcDir/S.cs" />
+  </ItemGroup>
+</Project>`;
+        await fs.promises.writeFile(projectPath, csprojSrc, 'utf-8');
+
+        await assert.rejects(
+            () => FileService.renameFolder(projectPath, 'SrcDir', 'DstDir'),
+            /already exists/i
+        );
+
+        // 无副作用：源目录还在，csproj 未变
+        const srcExists = await fs.promises.access(path.join(tmpDir, 'SrcDir', 'S.cs')).then(() => true, () => false);
+        assert.strictEqual(srcExists, true);
+        const csproj = await fs.promises.readFile(projectPath, 'utf-8');
+        assert.strictEqual(csproj, csprojSrc);
+    });
+
+    test('renameFolder SDK 项目仅改目录不碰 csproj', async () => {
+        const sdkCsproj = `<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+</Project>`;
+        await fs.promises.writeFile(projectPath, sdkCsproj, 'utf-8');
+        await fs.promises.mkdir(path.join(tmpDir, 'SdkDir'), { recursive: true });
+        await fs.promises.writeFile(path.join(tmpDir, 'SdkDir', 'K.cs'), 'class K { }', 'utf-8');
+
+        await FileService.renameFolder(projectPath, 'SdkDir', 'SdkRenamed');
+
+        const newExists = await fs.promises.access(path.join(tmpDir, 'SdkRenamed', 'K.cs')).then(() => true, () => false);
+        assert.strictEqual(newExists, true);
+        const csproj = await fs.promises.readFile(projectPath, 'utf-8');
+        assert.strictEqual(csproj, sdkCsproj);
+    });
 });

@@ -236,6 +236,93 @@ export class FileService {
         return targets.length;
     }
 
+    /**
+     * 重命名文件夹：目录改名 + 批量更新非 SDK 项目 .csproj 中该文件夹下所有条目路径。
+     * 先完成 csproj 内容计算和校验，再动文件系统（与 moveFile 一致的先验证后动盘策略）。
+     */
+    static async renameFolder(
+        projectPath: string,
+        folderRelPath: string,
+        newName: string
+    ): Promise<void> {
+        const normalizedOld = folderRelPath.replace(/\\/g, '/').replace(/\/+$/, '');
+        if (!normalizedOld || normalizedOld === '.') {
+            throw new Error(`Invalid folder path: ${folderRelPath}`);
+        }
+        if (!newName || newName === '.' || /[\\/]/.test(newName)) {
+            throw new Error(`Invalid folder name: ${newName}`);
+        }
+        const parentDir = path.posix.dirname(normalizedOld);
+        const normalizedNew = parentDir === '.'
+            ? newName
+            : path.posix.join(parentDir, newName);
+
+        const projectDir = path.dirname(projectPath);
+        const oldAbsPath = path.join(projectDir, normalizedOld);
+        const newAbsPath = path.join(projectDir, normalizedNew);
+
+        // 1. 校验源目录存在、目标目录不存在
+        try {
+            await fs.promises.access(oldAbsPath);
+        } catch {
+            throw new Error(`Source folder not found: ${folderRelPath}`);
+        }
+        try {
+            await fs.promises.access(newAbsPath);
+            throw new Error(`Target folder already exists: ${normalizedNew}`);
+        } catch (err) {
+            if (err instanceof Error && err.message.startsWith('Target folder already exists')) {
+                throw err;
+            }
+        }
+
+        // 2. 非 SDK 项目：内存中批量计算 csproj 更新（沿用 moveFile 的分隔符策略）
+        const csprojContent = await fs.promises.readFile(projectPath, 'utf-8');
+        const isSdk = /<Project\s+Sdk="[^"]*"/.test(csprojContent);
+
+        let updatedContent: string | undefined;
+        if (!isSdk) {
+            const project = CsprojSerializer.parse(csprojContent, projectPath);
+            const prefix = normalizedOld + '/';
+            updatedContent = csprojContent;
+
+            for (const compile of project.compiles) {
+                const compilePosix = compile.include.replace(/\\/g, '/');
+                if (compilePosix !== normalizedOld && !compilePosix.startsWith(prefix)) {
+                    continue;
+                }
+                const newIncludePosix = normalizedNew + compilePosix.slice(normalizedOld.length);
+                // 新路径跟随源条目的分隔符风格
+                const newInclude = compile.include.includes('\\')
+                    ? newIncludePosix.replace(/\//g, '\\')
+                    : newIncludePosix;
+
+                let next = CsprojSerializer.updateCompilePath(updatedContent, compile.include, newInclude);
+                if (next === updatedContent) {
+                    next = CsprojSerializer.updateCompilePath(
+                        updatedContent,
+                        compile.include.replace(/\//g, '\\'),
+                        newIncludePosix.replace(/\//g, '\\')
+                    );
+                }
+                updatedContent = next;
+            }
+        }
+
+        // 3. 目录改名
+        await fs.promises.rename(oldAbsPath, newAbsPath);
+
+        // 4. 写入 csproj（非 SDK），失败回滚目录改名
+        if (!isSdk && updatedContent !== undefined && updatedContent !== csprojContent) {
+            try {
+                await fs.promises.writeFile(projectPath, updatedContent, 'utf-8');
+            } catch (err) {
+                await fs.promises.rename(newAbsPath, oldAbsPath);
+                throw err;
+            }
+        }
+    }
+
     private static replaceClassName(content: string, newName: string, oldName: string): string {
         const escaped = oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const typeKeyword = '(?:class|struct|interface|enum|record)';
