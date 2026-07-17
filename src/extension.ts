@@ -19,6 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
     const treeView = vscode.window.createTreeView('csharpsolution-projects', {
         treeDataProvider: treeProvider,
         showCollapseAll: true,
+        canSelectMany: true,
         dragAndDropController: dragDropController,
     });
 
