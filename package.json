@@ -3,7 +3,9 @@
   "displayName": "CSharpSolution",
   "description": "管理传统 C# 项目（非 SDK 风格）的 VS Code 扩展，支持项目浏览、添加类、删除文件并自动维护 .csproj",
   "publisher": "kyattocat",
-  "repository": { "url": "https://github.com/KyattoCat/CSharpSolutionExtension" },
+  "repository": {
+    "url": "https://github.com/KyattoCat/CSharpSolutionExtension"
+  },
   "version": "1.5.0",
   "engines": {
     "vscode": "^1.93.0"
@@ -136,6 +138,21 @@
           "submenu": "csharpsolution.addFileMenu",
           "when": "view == csharpsolution-projects && viewItem == dirFolder",
           "group": "navigation@1"
+        },
+        {
+          "submenu": "csharpsolution.addFileMenu",
+          "when": "view == csharpsolution-projects && viewItem == solutionProject",
+          "group": "navigation@1"
+        },
+        {
+          "command": "csharpsolution.addFolder",
+          "when": "view == csharpsolution-projects && viewItem == solutionProject",
+          "group": "navigation@2"
+        },
+        {
+          "command": "csharpsolution.addExistingFile",
+          "when": "view == csharpsolution-projects && viewItem == solutionProject",
+          "group": "navigation@3"
         },
         {
           "command": "csharpsolution.addFolder",
@@ -364,13 +381,19 @@
       "properties": {
         "csharpsolution.vcs": {
           "type": "string",
-          "enum": ["git", "svn", "none"],
+          "enum": [
+            "git",
+            "svn",
+            "none"
+          ],
           "default": "git",
           "description": "版本控制系统（SVN 需要命令行工具）"
         },
         "csharpsolution.excludePatterns": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "default": [],
           "description": "额外的排除 glob 模式（与默认的 node_modules/bin/obj 合并）"
         },
