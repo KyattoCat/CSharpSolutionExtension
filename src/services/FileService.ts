@@ -202,6 +202,17 @@ export class FileService {
         if (!normalizedFolder || normalizedFolder === '.') {
             throw new Error(`Invalid folder path: ${folderRelPath}`);
         }
+
+        // 包含性校验：目标目录必须严格位于项目目录内部
+        // （防御链接条目如 <Compile Include="..\Shared\Foo.cs" /> 产生的 `..` 文件夹节点）
+        const projectDir = path.dirname(projectPath);
+        const projectDirResolved = path.resolve(projectDir);
+        const dirAbsResolved = path.resolve(projectDir, normalizedFolder);
+        if (dirAbsResolved === projectDirResolved ||
+            !dirAbsResolved.startsWith(projectDirResolved + path.sep)) {
+            throw new Error(`Folder is outside the project directory: ${folderRelPath}`);
+        }
+
         const prefix = normalizedFolder + '/';
 
         // 前缀匹配筛出文件夹下所有条目（POSIX 归一化比较）
@@ -221,16 +232,16 @@ export class FileService {
             await fs.promises.writeFile(projectPath, updated, 'utf-8');
         }
 
-        // 整个目录进回收站
-        const projectDir = path.dirname(projectPath);
-        const dirAbsPath = path.join(projectDir, normalizedFolder);
+        // 整个目录进回收站；物理删除失败时抛错，由上层如实报告（避免误报「已删除」）
         try {
-            await vscode.workspace.fs.delete(vscode.Uri.file(dirAbsPath), {
+            await vscode.workspace.fs.delete(vscode.Uri.file(dirAbsResolved), {
                 recursive: true,
                 useTrash: true,
             });
         } catch (err) {
-            console.warn(`Failed to delete folder: ${dirAbsPath}`, err);
+            throw new Error(
+                `Failed to delete folder: ${normalizedFolder} (${err instanceof Error ? err.message : String(err)})`
+            );
         }
 
         return targets.length;
@@ -258,6 +269,16 @@ export class FileService {
             : path.posix.join(parentDir, newName);
 
         const projectDir = path.dirname(projectPath);
+
+        // 包含性校验：源目录必须严格位于项目目录内部
+        // （防御链接条目如 <Compile Include="..\Shared\Foo.cs" /> 产生的 `..` 文件夹节点）
+        const projectDirResolved = path.resolve(projectDir);
+        const oldAbsResolved = path.resolve(projectDir, normalizedOld);
+        if (oldAbsResolved === projectDirResolved ||
+            !oldAbsResolved.startsWith(projectDirResolved + path.sep)) {
+            throw new Error(`Folder is outside the project directory: ${folderRelPath}`);
+        }
+
         const oldAbsPath = path.join(projectDir, normalizedOld);
         const newAbsPath = path.join(projectDir, normalizedNew);
 

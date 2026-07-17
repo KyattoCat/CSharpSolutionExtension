@@ -417,6 +417,18 @@ suite('FileService', () => {
         assert.ok(csproj.includes('OldName.cs'));
     });
 
+    test('deleteFolder 拒绝项目目录之外的路径且 csproj 不变', async () => {
+        await assert.rejects(
+            () => FileService.deleteFolder(projectPath, '../Outside', [{ include: '../Outside/A.cs' }]),
+            /outside the project/
+        );
+
+        // 项目目录仍在，csproj 内容未被改动
+        await fs.promises.access(tmpDir);
+        const csproj = await fs.promises.readFile(projectPath, 'utf-8');
+        assert.strictEqual(csproj, csprojContent);
+    });
+
     test('renameFolder 重命名目录并更新 csproj 全部路径', async () => {
         const subDir = path.join(tmpDir, 'OldDir');
         await fs.promises.mkdir(path.join(subDir, 'Nested'), { recursive: true });
@@ -579,5 +591,17 @@ suite('FileService', () => {
         const csproj = await fs.promises.readFile(projectPath, 'utf-8');
         assert.ok(csproj.includes('Utils/U.cs'));
         assert.ok(!csproj.includes('utils/U.cs'));
+    });
+
+    test('renameFolder 拒绝项目目录之外的路径', async () => {
+        await assert.rejects(
+            () => FileService.renameFolder(projectPath, '..', 'X'),
+            /outside the project/
+        );
+
+        // 项目目录与 csproj 均未受影响
+        await fs.promises.access(tmpDir);
+        const csproj = await fs.promises.readFile(projectPath, 'utf-8');
+        assert.strictEqual(csproj, csprojContent);
     });
 });

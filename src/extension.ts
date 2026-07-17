@@ -127,7 +127,10 @@ export function activate(context: vscode.ExtensionContext) {
 
             // folder 节点
             const project = treeProvider.allProjects.find(p => p.path === node.projectPath);
-            if (!project) return;
+            if (!project) {
+                vscode.window.showErrorMessage('未找到项目，请刷新后重试');
+                return;
+            }
 
             const folderName = path.basename(node.relPath);
             const normalizedFolder = node.relPath.replace(/\\/g, '/');
@@ -228,17 +231,21 @@ export function activate(context: vscode.ExtensionContext) {
                 prompt: '请输入新文件夹名',
                 value: oldFolderName,
                 validateInput: (value) => {
-                    if (!value.trim()) return '文件夹名不能为空';
-                    if (/[/\\:*?"<>|]/.test(value)) return '文件夹名包含非法字符';
-                    if (value === oldFolderName) return '新文件夹名与旧文件夹名相同';
+                    const trimmed = value.trim();
+                    if (!trimmed) return '文件夹名不能为空';
+                    if (/[/\\:*?"<>|]/.test(trimmed)) return '文件夹名包含非法字符';
+                    if (/^(CON|PRN|AUX|NUL|COM\d|LPT\d)$/i.test(trimmed)) return '文件夹名是 Windows 保留名称';
+                    if (/[. ]$/.test(trimmed)) return '文件夹名不能以点或空格结尾';
+                    if (trimmed === oldFolderName) return '新文件夹名与旧文件夹名相同';
                     return null;
                 },
             });
-            if (!newFolderName) return;
+            if (!newFolderName?.trim()) return;
+            const trimmedFolderName = newFolderName.trim();
 
             try {
-                await FileService.renameFolder(node.projectPath, node.relPath, newFolderName);
-                vscode.window.showInformationMessage(`已重命名文件夹: ${oldFolderName} → ${newFolderName}`);
+                await FileService.renameFolder(node.projectPath, node.relPath, trimmedFolderName);
+                vscode.window.showInformationMessage(`已重命名文件夹: ${oldFolderName} → ${trimmedFolderName}`);
                 vscode.commands.executeCommand('csharpsolution.refresh');
             } catch (err) {
                 vscode.window.showErrorMessage(
@@ -277,7 +284,8 @@ export function activate(context: vscode.ExtensionContext) {
 
     // --- 在集成终端中打开 ---
     context.subscriptions.push(
-        vscode.commands.registerCommand('csharpsolution.openInTerminal', async (node: ProjectNode) => {
+        vscode.commands.registerCommand('csharpsolution.openInTerminal', async (node?: ProjectNode) => {
+            node = node ?? treeView.selection[0];
             if (!node) return;
 
             let cwd: string | undefined;
@@ -297,7 +305,7 @@ export function activate(context: vscode.ExtensionContext) {
             }
 
             if (cwd) {
-                vscode.window.createTerminal({ cwd }).show();
+                vscode.window.createTerminal({ cwd, name: path.basename(cwd) }).show();
             }
         })
     );
