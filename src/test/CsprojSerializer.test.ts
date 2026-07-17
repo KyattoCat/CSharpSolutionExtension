@@ -454,4 +454,58 @@ suite('CsprojSerializer — parse', () => {
             fs.rmSync(tmpRoot, { recursive: true, force: true });
         }
     });
+
+    test('Compile Remove 支持 ** 通配符（往返）', () => {
+        const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'csproj-glob2-'));
+        try {
+            fs.mkdirSync(path.join(tmpRoot, 'Generated', 'Deep'), { recursive: true });
+            fs.writeFileSync(path.join(tmpRoot, 'Generated', 'A.cs'), 'class A { }');
+            fs.writeFileSync(path.join(tmpRoot, 'Generated', 'Deep', 'B.cs'), 'class B { }');
+            fs.writeFileSync(path.join(tmpRoot, 'Keep.cs'), 'class K { }');
+
+            const xml = `<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><Compile Remove="Generated/**" /></ItemGroup>
+</Project>`;
+            const project = CsprojSerializer.parse(xml, path.join(tmpRoot, 'Test.csproj'));
+            const includes = project.compiles.map(c => c.include.replace(/\\/g, '/'));
+            assert.deepStrictEqual(includes, ['Keep.cs']);
+        } finally {
+            fs.rmSync(tmpRoot, { recursive: true, force: true });
+        }
+    });
+
+    test('Compile Remove 的 * 只匹配单层', () => {
+        const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'csproj-glob3-'));
+        try {
+            fs.mkdirSync(path.join(tmpRoot, 'Sub'));
+            fs.writeFileSync(path.join(tmpRoot, 'Root.cs'), 'class R { }');
+            fs.writeFileSync(path.join(tmpRoot, 'Sub', 'Nested.cs'), 'class N { }');
+
+            const xml = `<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><Compile Remove="*.cs" /></ItemGroup>
+</Project>`;
+            const project = CsprojSerializer.parse(xml, path.join(tmpRoot, 'Test.csproj'));
+            const includes = project.compiles.map(c => c.include.replace(/\\/g, '/'));
+            assert.deepStrictEqual(includes, ['Sub/Nested.cs'], '* 不应跨目录匹配');
+        } finally {
+            fs.rmSync(tmpRoot, { recursive: true, force: true });
+        }
+    });
+
+    test('Compile Remove 的 ? 匹配单字符', () => {
+        const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'csproj-glob4-'));
+        try {
+            fs.writeFileSync(path.join(tmpRoot, 'A1.cs'), 'class A1 { }');
+            fs.writeFileSync(path.join(tmpRoot, 'A22.cs'), 'class A22 { }');
+
+            const xml = `<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><Compile Remove="A?.cs" /></ItemGroup>
+</Project>`;
+            const project = CsprojSerializer.parse(xml, path.join(tmpRoot, 'Test.csproj'));
+            const includes = project.compiles.map(c => c.include.replace(/\\/g, '/'));
+            assert.deepStrictEqual(includes, ['A22.cs']);
+        } finally {
+            fs.rmSync(tmpRoot, { recursive: true, force: true });
+        }
+    });
 });

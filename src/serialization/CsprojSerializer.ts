@@ -129,9 +129,9 @@ export class CsprojSerializer {
             const pat = rawPat.replace(/\\/g, '/'); // 归一化分隔符：兼容反斜杠风格的 Remove/None 条目
             const escaped = pat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             const regexStr = '^' + escaped
-                .replace(/\\\\\*\\\\\*/g, '.*')
-                .replace(/\\\\\*/g, '[^/]*')
-                .replace(/\\\\\?/g, '.') + '$';
+                .replace(/\\\*\\\*/g, '.*')      // ** → 任意（含分隔符）
+                .replace(/\\\*/g, '[^/]*')       // *  → 单层
+                .replace(/\\\?/g, '.') + '$';    // ?  → 单字符
             if (new RegExp(regexStr).test(relPath)) return true;
         }
         return false;
