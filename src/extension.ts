@@ -11,15 +11,21 @@ import { GitStatusService } from './services/GitStatusService';
 import { SvnStatusService } from './services/SvnStatusService';
 import { ProjectNode } from './models/ProjectNode';
 import * as path from 'path';
+import { DragDropController } from './tree/DragDropController';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('C# Project Manager extension activated');
 
     const treeProvider = new ProjectTreeProvider();
 
+    const dragDropController = new DragDropController(treeProvider, () => {
+        vscode.commands.executeCommand('csharpsolution.refresh');
+    });
+
     const treeView = vscode.window.createTreeView('csharpsolution-projects', {
         treeDataProvider: treeProvider,
         showCollapseAll: true,
+        dragAndDropController: dragDropController,
     });
 
     treeView.message = '扫描中...';
