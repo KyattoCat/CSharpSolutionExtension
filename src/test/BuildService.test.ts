@@ -12,4 +12,19 @@ suite('BuildService', () => {
         const args = BuildService.getCleanArgs('/path/to/Test.csproj');
         assert.deepStrictEqual(args, ['clean', '/path/to/Test.csproj']);
     });
+
+    test('getMsBuildArgs 返回正确参数', () => {
+        assert.deepStrictEqual(
+            BuildService.getMsBuildArgs('C:/proj/Test.csproj', 'Build'),
+            ['C:/proj/Test.csproj', '/t:Build']
+        );
+        assert.deepStrictEqual(
+            BuildService.getMsBuildArgs('C:/proj/Test.csproj', 'Clean'),
+            ['C:/proj/Test.csproj', '/t:Clean']
+        );
+        assert.deepStrictEqual(
+            BuildService.getMsBuildArgs('C:/proj/Test.csproj', 'Rebuild'),
+            ['C:/proj/Test.csproj', '/t:Rebuild']
+        );
+    });
 });

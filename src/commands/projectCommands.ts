@@ -4,16 +4,29 @@ import * as path from 'path';
 import { ProjectNode } from '../models/ProjectNode';
 import { BuildService } from '../services/BuildService';
 import { SlnService } from '../services/SlnService';
+import { ProjectTreeProvider } from '../tree/ProjectTreeProvider';
+import { ProjectDiscovery } from '../services/ProjectDiscovery';
 
 /** 注册项目/解决方案级命令：生成 / 清理 / 重新生成 / 添加新项目 / 添加已有项目 / 从解决方案移除 */
-export function registerProjectCommands(context: vscode.ExtensionContext): void {
+export function registerProjectCommands(context: vscode.ExtensionContext, treeProvider: ProjectTreeProvider): void {
+    /** 构建目标是否含传统（非 SDK）项目：project 节点看自身，solution 节点看其成员 */
+    const hasLegacyProject = (node: ProjectNode): boolean => {
+        if (node.type === 'project') {
+            return !node.project.isSdk;
+        }
+        if (node.type === 'solution') {
+            const projects = ProjectDiscovery.findProjectsForSolution(node.solution, treeProvider.allProjects);
+            return projects.some(p => !p.isSdk);
+        }
+        return false;
+    };
     // --- 生成 ---
     context.subscriptions.push(
         vscode.commands.registerCommand('csharpsolution.build', async (node: ProjectNode) => {
             if (!node || (node.type !== 'project' && node.type !== 'solution')) return;
             const targetPath = node.type === 'solution' ? node.solution.path : node.project.path;
             const targetName = node.type === 'solution' ? node.solution.name : node.project.name;
-            await BuildService.build(targetPath, targetName);
+            await BuildService.build(targetPath, targetName, hasLegacyProject(node));
             vscode.commands.executeCommand('csharpsolution.refresh');
         })
     );
@@ -24,7 +37,7 @@ export function registerProjectCommands(context: vscode.ExtensionContext): void 
             if (!node || (node.type !== 'project' && node.type !== 'solution')) return;
             const targetPath = node.type === 'solution' ? node.solution.path : node.project.path;
             const targetName = node.type === 'solution' ? node.solution.name : node.project.name;
-            await BuildService.clean(targetPath, targetName);
+            await BuildService.clean(targetPath, targetName, hasLegacyProject(node));
             vscode.commands.executeCommand('csharpsolution.refresh');
         })
     );
@@ -35,7 +48,7 @@ export function registerProjectCommands(context: vscode.ExtensionContext): void 
             if (!node || (node.type !== 'project' && node.type !== 'solution')) return;
             const targetPath = node.type === 'solution' ? node.solution.path : node.project.path;
             const targetName = node.type === 'solution' ? node.solution.name : node.project.name;
-            await BuildService.rebuild(targetPath, targetName);
+            await BuildService.rebuild(targetPath, targetName, hasLegacyProject(node));
             vscode.commands.executeCommand('csharpsolution.refresh');
         })
     );
