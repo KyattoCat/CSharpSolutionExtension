@@ -92,8 +92,12 @@ export class DragDropController implements vscode.TreeDragAndDropController<Proj
         for (const item of dragData) {
             if (item.type === 'folder') {
                 const normalizedSrc = item.nodePath.replace(/\\/g, '/');
-                if (normalizedSrc === targetDir) return; // 放到自身
-                if (targetDir.startsWith(normalizedSrc + '/')) return; // 放到子目录
+                if (normalizedSrc === targetDir) return; // 放到自身 → 静默忽略
+                if (targetDir.startsWith(normalizedSrc + '/')) {
+                    // 放到子目录 → 阻止并提示
+                    vscode.window.showWarningMessage('不能将文件夹移动到其子目录中');
+                    return;
+                }
             }
         }
 
@@ -121,9 +125,7 @@ export class DragDropController implements vscode.TreeDragAndDropController<Proj
 
         let skippedCount = 0;
         if (conflictCount > 0) {
-            const result = await this.resolveConflicts(
-                moves, projectDir, safeFiles, targetDisplayName
-            );
+            const result = await this.resolveConflicts(moves, projectDir, safeFiles);
             if (result === null) return; // 用户取消
             skippedCount = result;
         }
@@ -243,8 +245,7 @@ export class DragDropController implements vscode.TreeDragAndDropController<Proj
     private async resolveConflicts(
         moves: MoveTask[],
         projectDir: string,
-        safeFiles: MoveTask[],
-        targetDisplayName: string
+        safeFiles: MoveTask[]
     ): Promise<number | null> {
         let skippedCount = 0;
 
