@@ -85,6 +85,7 @@ export class CsprojSerializer {
             for (const entry of entries) {
                 const full = path.join(dir, entry.name);
                 if (entry.isDirectory()) {
+                    if (entry.name.startsWith('.')) continue;
                     if (entry.name === 'bin' || entry.name === 'obj' || entry.name === 'node_modules') continue;
                     results.push(...this.walkDir(full, root));
                 } else if (entry.name.endsWith('.cs')) {
@@ -95,7 +96,7 @@ export class CsprojSerializer {
         return results;
     }
 
-    /** 收集子树中不含任何 .cs 文件的目录（POSIX 相对路径，含嵌套空目录），跳过 bin/obj/node_modules */
+    /** 收集子树中不含任何 .cs 文件的目录（POSIX 相对路径，含嵌套空目录），跳过 bin/obj/node_modules 及点开头目录 */
     private static collectEmptyDirs(root: string): string[] {
         const result: string[] = [];
         const walk = (dir: string): boolean => { // 返回子树是否含 .cs
@@ -104,6 +105,7 @@ export class CsprojSerializer {
                 const entries = fs.readdirSync(dir, { withFileTypes: true });
                 for (const entry of entries) {
                     if (entry.isDirectory()) {
+                        if (entry.name.startsWith('.')) continue;
                         if (entry.name === 'bin' || entry.name === 'obj' || entry.name === 'node_modules') continue;
                         const full = path.join(dir, entry.name);
                         const childHas = walk(full);
@@ -123,7 +125,8 @@ export class CsprojSerializer {
     }
 
     private static matchesGlob(relPath: string, patterns: string[]): boolean {
-        for (const pat of patterns) {
+        for (const rawPat of patterns) {
+            const pat = rawPat.replace(/\\/g, '/'); // 归一化分隔符：兼容反斜杠风格的 Remove/None 条目
             const escaped = pat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             const regexStr = '^' + escaped
                 .replace(/\\\\\*\\\\\*/g, '.*')
@@ -320,8 +323,23 @@ export class CsprojSerializer {
         return this.insertItemLine(xml, /^\s*<Folder\s+Include="[^"]*"/gm, newLine);
     }
 
-    /** SDK 项目排除：添加 <Compile Remove="..." /> 条目 */
+    /** 解析 <Compile Remove="..."> 条目，返回 POSIX 风格路径列表 */
+    private static parseCompileRemoves(xml: string): string[] {
+        const results: string[] = [];
+        const regex = /<Compile\s+Remove="([^"]*)"/g;
+        let match: RegExpExecArray | null;
+        while ((match = regex.exec(xml)) !== null) {
+            results.push(match[1].replace(/\\/g, '/'));
+        }
+        return results;
+    }
+
+    /** SDK 项目排除：添加 <Compile Remove="..." /> 条目。已有同路径条目（分隔符归一化比较）则返回原 xml。 */
     static addCompileRemove(xml: string, relPath: string): string {
+        const normalized = relPath.replace(/\\/g, '/');
+        if (this.parseCompileRemoves(xml).includes(normalized)) {
+            return xml;
+        }
         const newLine = `    <Compile Remove="${relPath}" />`;
         return this.insertItemLine(xml, /^\s*<Compile\s+Remove="[^"]*"/gm, newLine);
     }

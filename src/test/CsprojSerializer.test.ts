@@ -394,6 +394,33 @@ suite('CsprojSerializer — parse', () => {
         assert.ok(result.indexOf('Old.cs') < result.indexOf('<Compile Remove="New.cs" />'));
     });
 
+    test('Compile Remove 反斜杠模式与正斜杠文件路径匹配（往返）', () => {
+        // 模拟 Windows：Remove 条目写入反斜杠，glob 归一化为正斜杠后仍应匹配
+        const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'csproj-sdk-remove-'));
+        try {
+            fs.mkdirSync(path.join(tmpRoot, 'Sub'));
+            fs.writeFileSync(path.join(tmpRoot, 'Sub', 'A.cs'), 'class A { }');
+            fs.writeFileSync(path.join(tmpRoot, 'Keep.cs'), 'class K { }');
+
+            let xml = '<Project Sdk="Microsoft.NET.Sdk">\n</Project>';
+            xml = CsprojSerializer.addCompileRemove(xml, 'Sub\\A.cs');
+
+            const project = CsprojSerializer.parse(xml, path.join(tmpRoot, 'Test.csproj'));
+            const includes = project.compiles.map(c => c.include.replace(/\\/g, '/'));
+            assert.ok(!includes.includes('Sub/A.cs'), '被排除的文件不应出现在 compiles 中');
+            assert.ok(includes.includes('Keep.cs'));
+        } finally {
+            fs.rmSync(tmpRoot, { recursive: true, force: true });
+        }
+    });
+
+    test('addCompileRemove 重复条目返回原 xml（归一化比较）', () => {
+        let xml = '<Project Sdk="Microsoft.NET.Sdk">\n</Project>';
+        xml = CsprojSerializer.addCompileRemove(xml, 'Sub\\A.cs');
+        const again = CsprojSerializer.addCompileRemove(xml, 'Sub/A.cs');
+        assert.strictEqual(again, xml);
+    });
+
     test('parseSdk 收集空目录到 folders', () => {
         // 临时目录：EmptyDir（空）、Src/HasFile.cs
         const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'csproj-sdk-folders-'));
@@ -407,6 +434,22 @@ suite('CsprojSerializer — parse', () => {
                 path.join(tmpRoot, 'Test.csproj')
             );
             assert.deepStrictEqual(project.folders, ['EmptyDir']);
+        } finally {
+            fs.rmSync(tmpRoot, { recursive: true, force: true });
+        }
+    });
+
+    test('collectEmptyDirs 跳过点目录', () => {
+        const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'csproj-dotdir-'));
+        try {
+            fs.mkdirSync(path.join(tmpRoot, '.git', 'objects'), { recursive: true });
+            fs.mkdirSync(path.join(tmpRoot, 'RealEmpty'));
+
+            const project = CsprojSerializer.parse(
+                '<Project Sdk="Microsoft.NET.Sdk"></Project>',
+                path.join(tmpRoot, 'Test.csproj')
+            );
+            assert.deepStrictEqual(project.folders, ['RealEmpty']);
         } finally {
             fs.rmSync(tmpRoot, { recursive: true, force: true });
         }
