@@ -506,4 +506,78 @@ suite('FileService', () => {
         const csproj = await fs.promises.readFile(projectPath, 'utf-8');
         assert.strictEqual(csproj, sdkCsproj);
     });
+
+    test('renameFolder 不误改同名前缀的兄弟目录条目', async () => {
+        await fs.promises.mkdir(path.join(tmpDir, 'OldDir'), { recursive: true });
+        await fs.promises.mkdir(path.join(tmpDir, 'OldDirExtra'), { recursive: true });
+        await fs.promises.writeFile(path.join(tmpDir, 'OldDir', 'X.cs'), 'class X { }', 'utf-8');
+        await fs.promises.writeFile(path.join(tmpDir, 'OldDirExtra', 'W.cs'), 'class W { }', 'utf-8');
+
+        const csprojSibling = `<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Compile Include="OldDir/X.cs" />
+    <Compile Include="OldDirExtra/W.cs" />
+  </ItemGroup>
+</Project>`;
+        await fs.promises.writeFile(projectPath, csprojSibling, 'utf-8');
+
+        await FileService.renameFolder(projectPath, 'OldDir', 'NewDir');
+
+        const csproj = await fs.promises.readFile(projectPath, 'utf-8');
+        assert.ok(csproj.includes('NewDir/X.cs'));
+        assert.ok(csproj.includes('OldDirExtra/W.cs'), '兄弟目录条目应保持不变');
+        assert.ok(!csproj.includes('OldDir/X.cs'));
+
+        // 兄弟目录物理上未受影响
+        const siblingExists = await fs.promises.access(path.join(tmpDir, 'OldDirExtra', 'W.cs')).then(() => true, () => false);
+        assert.strictEqual(siblingExists, true);
+    });
+
+    test('renameFolder 重命名嵌套子文件夹并保留父路径', async () => {
+        await fs.promises.mkdir(path.join(tmpDir, 'Parent', 'Child'), { recursive: true });
+        await fs.promises.writeFile(path.join(tmpDir, 'Parent', 'Child', 'N.cs'), 'class N { }', 'utf-8');
+
+        const csprojNested = `<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Compile Include="Parent/Child/N.cs" />
+  </ItemGroup>
+</Project>`;
+        await fs.promises.writeFile(projectPath, csprojNested, 'utf-8');
+
+        await FileService.renameFolder(projectPath, 'Parent/Child', 'Renamed');
+
+        // 物理目录：Parent/Child → Parent/Renamed
+        const oldExists = await fs.promises.access(path.join(tmpDir, 'Parent', 'Child')).then(() => true, () => false);
+        const newExists = await fs.promises.access(path.join(tmpDir, 'Parent', 'Renamed', 'N.cs')).then(() => true, () => false);
+        assert.strictEqual(oldExists, false);
+        assert.strictEqual(newExists, true);
+
+        // csproj 保留父路径前缀
+        const csproj = await fs.promises.readFile(projectPath, 'utf-8');
+        assert.ok(csproj.includes('Parent/Renamed/N.cs'));
+        assert.ok(!csproj.includes('Parent/Child'));
+    });
+
+    test('renameFolder 支持仅大小写变化的改名', async () => {
+        await fs.promises.mkdir(path.join(tmpDir, 'utils'), { recursive: true });
+        await fs.promises.writeFile(path.join(tmpDir, 'utils', 'U.cs'), 'class U { }', 'utf-8');
+
+        const csprojCase = `<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Compile Include="utils/U.cs" />
+  </ItemGroup>
+</Project>`;
+        await fs.promises.writeFile(projectPath, csprojCase, 'utf-8');
+
+        await FileService.renameFolder(projectPath, 'utils', 'Utils');
+
+        // 目录名大小写已更新（在大小写不敏感文件系统上通过 readdir 校验真实名称）
+        const entries = await fs.promises.readdir(tmpDir);
+        assert.ok(entries.includes('Utils'), '目录应改名为 Utils');
+        assert.ok(!entries.includes('utils'), '旧名 utils 不应存在');
+
+        const csproj = await fs.promises.readFile(projectPath, 'utf-8');
+        assert.ok(csproj.includes('Utils/U.cs'));
+        assert.ok(!csproj.includes('utils/U.cs'));
+    });
 });

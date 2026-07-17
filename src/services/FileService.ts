@@ -249,7 +249,7 @@ export class FileService {
         if (!normalizedOld || normalizedOld === '.') {
             throw new Error(`Invalid folder path: ${folderRelPath}`);
         }
-        if (!newName || newName === '.' || /[\\/]/.test(newName)) {
+        if (!newName || newName === '.' || newName === '..' || /[\\/]/.test(newName)) {
             throw new Error(`Invalid folder name: ${newName}`);
         }
         const parentDir = path.posix.dirname(normalizedOld);
@@ -261,18 +261,23 @@ export class FileService {
         const oldAbsPath = path.join(projectDir, normalizedOld);
         const newAbsPath = path.join(projectDir, normalizedNew);
 
-        // 1. 校验源目录存在、目标目录不存在
+        // 1. 校验源目录存在、目标目录不存在。
+        //    仅大小写变化的改名在大小写不敏感文件系统（win32/macOS）上 access 会命中自身，
+        //    需跳过存在性检查；fs.rename 本身能正确处理 case-only 改名。
         try {
             await fs.promises.access(oldAbsPath);
         } catch {
             throw new Error(`Source folder not found: ${folderRelPath}`);
         }
-        try {
-            await fs.promises.access(newAbsPath);
-            throw new Error(`Target folder already exists: ${normalizedNew}`);
-        } catch (err) {
-            if (err instanceof Error && err.message.startsWith('Target folder already exists')) {
-                throw err;
+        const caseOnly = normalizedNew.toLowerCase() === normalizedOld.toLowerCase();
+        if (!caseOnly) {
+            try {
+                await fs.promises.access(newAbsPath);
+                throw new Error(`Target folder already exists: ${normalizedNew}`);
+            } catch (err) {
+                if (err instanceof Error && err.message.startsWith('Target folder already exists')) {
+                    throw err;
+                }
             }
         }
 
@@ -297,15 +302,8 @@ export class FileService {
                     ? newIncludePosix.replace(/\//g, '\\')
                     : newIncludePosix;
 
-                let next = CsprojSerializer.updateCompilePath(updatedContent, compile.include, newInclude);
-                if (next === updatedContent) {
-                    next = CsprojSerializer.updateCompilePath(
-                        updatedContent,
-                        compile.include.replace(/\//g, '\\'),
-                        newIncludePosix.replace(/\//g, '\\')
-                    );
-                }
-                updatedContent = next;
+                // compile.include 来自同一份 csprojContent 的逐字解析，精确匹配必定命中
+                updatedContent = CsprojSerializer.updateCompilePath(updatedContent, compile.include, newInclude);
             }
         }
 
