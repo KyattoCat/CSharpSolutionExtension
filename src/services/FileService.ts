@@ -115,6 +115,66 @@ export class FileService {
         }
     }
 
+    /**
+     * 将文件从 oldRelPath 移动到 newRelPath。
+     * 移动物理文件，对非 SDK 项目同步更新 .csproj 中的 Compile Include 路径。
+     */
+    static async moveFile(
+        projectPath: string,
+        oldRelPath: string,
+        newRelPath: string
+    ): Promise<void> {
+        const projectDir = path.dirname(projectPath);
+        const oldAbsPath = path.join(projectDir, oldRelPath);
+        const newAbsPath = path.join(projectDir, newRelPath);
+
+        // 1. 验证源文件存在
+        try {
+            await fs.promises.access(oldAbsPath);
+        } catch {
+            throw new Error(`Source file not found: ${oldRelPath}`);
+        }
+
+        // 2. 安全检查 —— 目标文件不应存在（上层已做冲突检测）
+        try {
+            await fs.promises.access(newAbsPath);
+            throw new Error(`Target file already exists: ${newRelPath}`);
+        } catch (err) {
+            if (err instanceof Error && err.message.startsWith('Target file already exists')) {
+                throw err;
+            }
+            // 文件不存在 → 正常，继续
+        }
+
+        // 3. 确保目标目录存在
+        const targetDir = path.dirname(newAbsPath);
+        await fs.promises.mkdir(targetDir, { recursive: true });
+
+        // 4. 读取 .csproj 判断是否为 SDK 项目
+        const csprojContent = await fs.promises.readFile(projectPath, 'utf-8');
+        const isSdk = /<Project\s+Sdk="[^"]*"/.test(csprojContent);
+
+        // 5. 移动物理文件
+        await fs.promises.rename(oldAbsPath, newAbsPath);
+
+        // 6. 更新 .csproj（非 SDK 项目）
+        if (!isSdk) {
+            const updatedContent = CsprojSerializer.updateCompilePath(
+                csprojContent,
+                oldRelPath,
+                newRelPath
+            );
+
+            if (updatedContent === csprojContent) {
+                // 回滚文件移动
+                await fs.promises.rename(newAbsPath, oldAbsPath);
+                throw new Error(`Path not found in csproj: ${oldRelPath}`);
+            }
+
+            await fs.promises.writeFile(projectPath, updatedContent, 'utf-8');
+        }
+    }
+
     private static replaceClassName(content: string, newName: string, oldName: string): string {
         const escaped = oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const typeKeyword = '(?:class|struct|interface|enum|record)';

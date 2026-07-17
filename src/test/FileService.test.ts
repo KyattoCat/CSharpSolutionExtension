@@ -146,4 +146,64 @@ suite('FileService', () => {
         const newContent = await fs.promises.readFile(path.join(tmpDir, 'NewStruct.cs'), 'utf-8');
         assert.ok(newContent.includes('struct NewStruct'));
     });
+
+    test('moveFile 移动文件到子目录并更新 .csproj', async () => {
+        // 创建源文件
+        await fs.promises.writeFile(
+            path.join(tmpDir, 'OldFile.cs'),
+            'namespace Test { public class OldFile { } }',
+            'utf-8'
+        );
+
+        // 更新 csproj 引用
+        const csprojWithFile = csprojContent.replace('OldName.cs', 'OldFile.cs');
+        await fs.promises.writeFile(projectPath, csprojWithFile, 'utf-8');
+
+        await FileService.moveFile(projectPath, 'OldFile.cs', 'SubDir/OldFile.cs');
+
+        // 验证旧文件已删除
+        try {
+            await fs.promises.access(path.join(tmpDir, 'OldFile.cs'));
+            assert.fail('old file should be deleted');
+        } catch { /* expected */ }
+
+        // 验证新文件存在
+        await fs.promises.access(path.join(tmpDir, 'SubDir', 'OldFile.cs'));
+
+        // 验证 .csproj 已更新
+        const csproj = await fs.promises.readFile(projectPath, 'utf-8');
+        assert.ok(csproj.includes('SubDir/OldFile.cs'));
+        assert.ok(!csproj.includes('"OldFile.cs"'));
+    });
+
+    test('moveFile 将子目录文件移到项目根', async () => {
+        const subDir = path.join(tmpDir, 'Models');
+        await fs.promises.mkdir(subDir, { recursive: true });
+        await fs.promises.writeFile(
+            path.join(subDir, 'MyModel.cs'),
+            'class MyModel { }',
+            'utf-8'
+        );
+
+        // 更新 csproj 引用子目录文件
+        const csprojWithSub = csprojContent.replace('OldName.cs', 'Models/MyModel.cs');
+        await fs.promises.writeFile(projectPath, csprojWithSub, 'utf-8');
+
+        await FileService.moveFile(projectPath, 'Models/MyModel.cs', 'MyModel.cs');
+
+        // 验证已移出子目录
+        await fs.promises.access(path.join(tmpDir, 'MyModel.cs'));
+
+        // 验证 .csproj 已更新
+        const csproj = await fs.promises.readFile(projectPath, 'utf-8');
+        assert.ok(csproj.includes('MyModel.cs'));
+        assert.ok(!csproj.includes('Models/MyModel.cs'));
+    });
+
+    test('moveFile 源文件不存在时抛出错误', async () => {
+        await assert.rejects(
+            () => FileService.moveFile(projectPath, 'NonExistent.cs', 'Dest.cs'),
+            /Source file not found/
+        );
+    });
 });
