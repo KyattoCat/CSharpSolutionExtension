@@ -1,8 +1,6 @@
 name: Build & Release VSIX
 
 on:
-  push:
-    tags: ['v*']
   workflow_dispatch:
 
 permissions:
@@ -11,79 +9,36 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    outputs:
-      skip: ${{ steps.check.outputs.skip }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Check if latest tag
-        id: check
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: |
-          LATEST=$(git tag --list 'v*' --sort=-v:refname | head -n1)
-          if [ "$GITHUB_REF_NAME" != "$LATEST" ]; then
-            echo "跳过：$GITHUB_REF_NAME 不是最新 tag（最新为 $LATEST）"
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-          fi
 
       - name: Setup Node.js
-        if: steps.check.outputs.skip != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
       - name: Setup pnpm
-        if: steps.check.outputs.skip != 'true'
         uses: pnpm/action-setup@v3
         with:
           version: latest
 
-      - name: Sync version from tag
-        if: startsWith(github.ref, 'refs/tags/v') && steps.check.outputs.skip != 'true'
-        run: |
-          TAG_VERSION=${GITHUB_REF#refs/tags/v}
-          node -e "const p=require('./package.json');p.version='$TAG_VERSION';require('fs').writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')"
-
       - name: Install dependencies
-        if: steps.check.outputs.skip != 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Compile
-        if: steps.check.outputs.skip != 'true'
         run: pnpm run compile
 
       - name: Run tests (Linux headless)
-        if: steps.check.outputs.skip != 'true'
         run: xvfb-run -a pnpm test
         continue-on-error: true
 
       - name: Package VSIX
-        if: steps.check.outputs.skip != 'true'
         run: npx @vscode/vsce package
 
       - name: Upload VSIX artifact
-        if: steps.check.outputs.skip != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: csharpsolution-vsix
           path: '*.vsix'
-
-  github-release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v') && needs.build.outputs.skip != 'true'
-    steps:
-      - name: Download VSIX artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: csharpsolution-vsix
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: '*.vsix'
-          generate_release_notes: true
