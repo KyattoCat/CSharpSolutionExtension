@@ -193,11 +193,98 @@ suite('FileService', () => {
 
         // 验证已移出子目录
         await fs.promises.access(path.join(tmpDir, 'MyModel.cs'));
+        const oldExists = await fs.promises.access(path.join(subDir, 'MyModel.cs'))
+            .then(() => true, () => false);
+        assert.strictEqual(oldExists, false, 'old file should be gone');
 
         // 验证 .csproj 已更新
         const csproj = await fs.promises.readFile(projectPath, 'utf-8');
-        assert.ok(csproj.includes('MyModel.cs'));
+        assert.ok(csproj.includes('Include="MyModel.cs"'));
         assert.ok(!csproj.includes('Models/MyModel.cs'));
+    });
+
+    test('moveFile 兼容反斜杠分隔符的传统 .csproj', async () => {
+        const subDir = path.join(tmpDir, 'Models');
+        await fs.promises.mkdir(subDir, { recursive: true });
+        await fs.promises.writeFile(
+            path.join(subDir, 'MyModel.cs'),
+            'class MyModel { }',
+            'utf-8'
+        );
+
+        // 传统 csproj 使用反斜杠分隔符引用文件
+        const csprojBackslash = csprojContent.replace('OldName.cs', 'Models\\MyModel.cs');
+        await fs.promises.writeFile(projectPath, csprojBackslash, 'utf-8');
+
+        // 调用方传入正斜杠路径
+        await FileService.moveFile(projectPath, 'Models/MyModel.cs', 'Shared/MyModel.cs');
+
+        // 验证物理文件已移动
+        await fs.promises.access(path.join(tmpDir, 'Shared', 'MyModel.cs'));
+        const oldExists = await fs.promises.access(path.join(subDir, 'MyModel.cs'))
+            .then(() => true, () => false);
+        assert.strictEqual(oldExists, false, 'old file should be gone');
+
+        // 验证 .csproj 已更新，且新路径沿用反斜杠风格
+        const csproj = await fs.promises.readFile(projectPath, 'utf-8');
+        assert.ok(csproj.includes('Include="Shared\\MyModel.cs"'));
+        assert.ok(!csproj.includes('Models\\MyModel.cs'));
+    });
+
+    test('moveFile csproj 中不存在该路径时报错且不移动文件', async () => {
+        await fs.promises.writeFile(path.join(tmpDir, 'Orphan.cs'), 'class Orphan { }', 'utf-8');
+        // 默认 csprojContent 只引用 OldName.cs，不包含 Orphan.cs
+
+        await assert.rejects(
+            () => FileService.moveFile(projectPath, 'Orphan.cs', 'SubDir/Orphan.cs'),
+            /Path not found/
+        );
+
+        // 验证源文件仍在原位，且目标不存在
+        await fs.promises.access(path.join(tmpDir, 'Orphan.cs'));
+        const movedExists = await fs.promises.access(path.join(tmpDir, 'SubDir', 'Orphan.cs'))
+            .then(() => true, () => false);
+        assert.strictEqual(movedExists, false, 'file should not be moved');
+    });
+
+    test('moveFile 目标文件已存在时报错', async () => {
+        await fs.promises.writeFile(path.join(tmpDir, 'Src.cs'), 'src', 'utf-8');
+        const subDir = path.join(tmpDir, 'SubDir');
+        await fs.promises.mkdir(subDir, { recursive: true });
+        await fs.promises.writeFile(path.join(subDir, 'Src.cs'), 'existing', 'utf-8');
+
+        await assert.rejects(
+            () => FileService.moveFile(projectPath, 'Src.cs', 'SubDir/Src.cs'),
+            /already exists/
+        );
+
+        // 验证源文件与目标文件均未被改动
+        const srcContent = await fs.promises.readFile(path.join(tmpDir, 'Src.cs'), 'utf-8');
+        assert.strictEqual(srcContent, 'src');
+        const targetContent = await fs.promises.readFile(path.join(subDir, 'Src.cs'), 'utf-8');
+        assert.strictEqual(targetContent, 'existing');
+    });
+
+    test('moveFile SDK 项目仅移动文件不修改 csproj', async () => {
+        const sdkCsproj = `<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+</Project>`;
+        await fs.promises.writeFile(projectPath, sdkCsproj, 'utf-8');
+        await fs.promises.writeFile(path.join(tmpDir, 'SdkFile.cs'), 'class SdkFile { }', 'utf-8');
+
+        await FileService.moveFile(projectPath, 'SdkFile.cs', 'SubDir/SdkFile.cs');
+
+        // 验证文件已移动
+        await fs.promises.access(path.join(tmpDir, 'SubDir', 'SdkFile.cs'));
+        const oldExists = await fs.promises.access(path.join(tmpDir, 'SdkFile.cs'))
+            .then(() => true, () => false);
+        assert.strictEqual(oldExists, false, 'old file should be gone');
+
+        // 验证 csproj 内容未变
+        const csproj = await fs.promises.readFile(projectPath, 'utf-8');
+        assert.strictEqual(csproj, sdkCsproj);
     });
 
     test('moveFile 源文件不存在时抛出错误', async () => {

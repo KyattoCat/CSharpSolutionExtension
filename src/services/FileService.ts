@@ -146,32 +146,45 @@ export class FileService {
             // 文件不存在 → 正常，继续
         }
 
-        // 3. 确保目标目录存在
-        const targetDir = path.dirname(newAbsPath);
-        await fs.promises.mkdir(targetDir, { recursive: true });
-
-        // 4. 读取 .csproj 判断是否为 SDK 项目
+        // 3. 读取 .csproj 判断是否为 SDK 项目
         const csprojContent = await fs.promises.readFile(projectPath, 'utf-8');
         const isSdk = /<Project\s+Sdk="[^"]*"/.test(csprojContent);
 
-        // 5. 移动物理文件
-        await fs.promises.rename(oldAbsPath, newAbsPath);
-
-        // 6. 更新 .csproj（非 SDK 项目）
+        // 4. 非 SDK 项目：先计算更新后的 .csproj 内容（在移动文件前完成校验，避免回滚）。
+        //    传统 .csproj 通常使用反斜杠分隔符，先按原样匹配，失败后翻转分隔符重试，
+        //    写入的新路径与匹配成功的分隔符风格保持一致。
+        let updatedContent: string | undefined;
         if (!isSdk) {
-            const updatedContent = CsprojSerializer.updateCompilePath(
+            updatedContent = CsprojSerializer.updateCompilePath(
                 csprojContent,
                 oldRelPath,
                 newRelPath
             );
-
             if (updatedContent === csprojContent) {
-                // 回滚文件移动
-                await fs.promises.rename(newAbsPath, oldAbsPath);
+                updatedContent = CsprojSerializer.updateCompilePath(
+                    csprojContent,
+                    oldRelPath.replace(/\//g, '\\'),
+                    newRelPath.replace(/\//g, '\\')
+                );
+            }
+            if (updatedContent === csprojContent) {
                 throw new Error(`Path not found in csproj: ${oldRelPath}`);
             }
+        }
 
-            await fs.promises.writeFile(projectPath, updatedContent, 'utf-8');
+        // 5. 确保目标目录存在，移动物理文件
+        const targetDir = path.dirname(newAbsPath);
+        await fs.promises.mkdir(targetDir, { recursive: true });
+        await fs.promises.rename(oldAbsPath, newAbsPath);
+
+        // 6. 写入 .csproj（非 SDK 项目），失败时回滚文件移动
+        if (!isSdk && updatedContent !== undefined) {
+            try {
+                await fs.promises.writeFile(projectPath, updatedContent, 'utf-8');
+            } catch (err) {
+                await fs.promises.rename(newAbsPath, oldAbsPath);
+                throw err;
+            }
         }
     }
 
