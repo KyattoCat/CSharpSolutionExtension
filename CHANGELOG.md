@@ -6,7 +6,17 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
-## [1.6.0] - 2026-07-17
+## [1.7.0] - 2026-07-17
+
+### Added
+
+- **MSBuild 支持** — `csharpsolution.buildTool` 配置（auto / dotnet / msbuild），auto 模式按项目类型智能选择：含传统非 SDK 项目时优先 MSBuild，找不到回退 dotnet 并警告
+- **MSBuild 自动探测** — `msbuildPath` 配置 → vswhere（VS/Build Tools 安装）→ PATH 三级定位链，结果会话缓存，配置变更自动重探
+- MSBuild 参数：`/t:Build` / `/t:Clean` / `/t:Rebuild`（重新生成单次调用，优于 dotnet 的 clean+build 两段）
+
+### Fixed
+
+- SDK 项目的 `Compile Remove` 通配符（`**/*.cs` / `*.cs` / `?.cs`）从未生效——`matchesGlob` 转义/替换正则不匹配，通配模式被当作字面字符串比较
 
 ### Added
 
