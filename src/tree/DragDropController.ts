@@ -5,21 +5,7 @@ import { CsprojProject } from '../models/CsprojModel';
 import { ProjectNode } from '../models/ProjectNode';
 import { FileService } from '../services/FileService';
 import { ProjectTreeProvider } from './ProjectTreeProvider';
-
-/** handleDrag 时序列化的轻量节点数据 */
-interface DragNodeData {
-    type: 'file' | 'folder';
-    projectPath: string;
-    /** folder: relPath; file: compile.include */
-    nodePath: string;
-}
-
-interface MoveTask {
-    oldRelPath: string;
-    newRelPath: string;
-    /** 覆盖模式：执行阶段先移除目标文件（及其 csproj 条目）再移动 */
-    overwrite?: boolean;
-}
+import { DragNodeData, MoveTask, dedupeDragData, detectCycle, expandMoves } from './dragDropLogic';
 
 export class DragDropController implements vscode.TreeDragAndDropController<ProjectNode> {
 
@@ -87,7 +73,7 @@ export class DragDropController implements vscode.TreeDragAndDropController<Proj
         }
 
         // 多选去重：移除重复项及已被其他拖拽文件夹包含的后代节点
-        const dragData = this.dedupeDragData(rawDragData);
+        const dragData = dedupeDragData(rawDragData);
 
         // 计算目标目录（相对路径，POSIX 风格）
         const targetDir = target.type === 'folder'
@@ -95,16 +81,11 @@ export class DragDropController implements vscode.TreeDragAndDropController<Proj
             : '';
 
         // 检测循环：不能将文件夹拖入其自身或子目录
-        for (const item of dragData) {
-            if (item.type === 'folder') {
-                const normalizedSrc = item.nodePath.replace(/\\/g, '/');
-                if (normalizedSrc === targetDir) return; // 放到自身 → 静默忽略
-                if (targetDir.startsWith(normalizedSrc + '/')) {
-                    // 放到子目录 → 阻止并提示
-                    vscode.window.showWarningMessage('不能将文件夹移动到其子目录中');
-                    return;
-                }
-            }
+        const cycle = detectCycle(dragData, targetDir);
+        if (cycle === 'self') return; // 放到自身 → 静默忽略
+        if (cycle === 'descendant') {
+            vscode.window.showWarningMessage('不能将文件夹移动到其子目录中');
+            return;
         }
 
         // 查找项目数据
@@ -115,7 +96,7 @@ export class DragDropController implements vscode.TreeDragAndDropController<Proj
 
         // --- 展开文件列表 ---
 
-        const moves: MoveTask[] = this.expandMoves(dragData, targetDir, project);
+        const moves: MoveTask[] = expandMoves(dragData, targetDir, project.compiles);
 
         if (moves.length === 0) return; // 全部是 no-op
 
@@ -195,76 +176,6 @@ export class DragDropController implements vscode.TreeDragAndDropController<Proj
     }
 
     // --- Private helpers ---
-
-    /** 多选去重：移除重复项，以及已被另一拖拽文件夹包含的后代节点（后代随文件夹整体移动） */
-    private dedupeDragData(dragData: DragNodeData[]): DragNodeData[] {
-        const folderPaths = dragData
-            .filter(d => d.type === 'folder')
-            .map(d => d.nodePath.replace(/\\/g, '/'));
-
-        const seen = new Set<string>();
-        return dragData.filter(item => {
-            const itemPath = item.nodePath.replace(/\\/g, '/');
-            const key = `${item.type}:${itemPath}`;
-            if (seen.has(key)) return false; // 重复项
-            seen.add(key);
-            // 位于某个被拖拽文件夹之内 → 过滤，避免产生重复移动任务
-            return !folderPaths.some(fp => fp !== itemPath && itemPath.startsWith(fp + '/'));
-        });
-    }
-
-    /** 将拖拽节点展开为 oldRelPath → newRelPath 的移动任务列表 */
-    private expandMoves(
-        dragData: DragNodeData[],
-        targetDir: string,
-        project: CsprojProject
-    ): MoveTask[] {
-        const moves: MoveTask[] = [];
-        const seenOldPaths = new Set<string>();
-
-        // 安全网：按 oldRelPath 去重；新路径分隔符风格与源条目保持一致，
-        // 避免传统反斜杠 csproj 漂移为混合风格（比较始终用 POSIX 风格）
-        const pushMove = (oldRelPath: string, newPosixRelPath: string) => {
-            const normalizedOld = oldRelPath.replace(/\\/g, '/');
-            if (seenOldPaths.has(normalizedOld)) return;
-            seenOldPaths.add(normalizedOld);
-            const newRelPath = oldRelPath.includes('\\')
-                ? newPosixRelPath.replace(/\//g, '\\')
-                : newPosixRelPath;
-            moves.push({ oldRelPath, newRelPath });
-        };
-
-        for (const item of dragData) {
-            if (item.type === 'file') {
-                const normalizedOld = item.nodePath.replace(/\\/g, '/');
-                const fileName = path.posix.basename(normalizedOld);
-                const newRelPath = targetDir
-                    ? path.posix.join(targetDir, fileName)
-                    : fileName;
-                if (normalizedOld === newRelPath) continue; // no-op
-                pushMove(item.nodePath, newRelPath);
-            } else if (item.type === 'folder') {
-                const normalizedSrc = item.nodePath.replace(/\\/g, '/');
-                const folderName = path.posix.basename(normalizedSrc);
-                const prefix = normalizedSrc + '/';
-
-                for (const compile of project.compiles) {
-                    const compilePath = compile.include.replace(/\\/g, '/');
-                    if (compilePath === normalizedSrc || compilePath.startsWith(prefix)) {
-                        const relativePart = compilePath.slice(normalizedSrc.length + 1);
-                        const newRelPath = targetDir
-                            ? path.posix.join(targetDir, folderName, relativePart)
-                            : path.posix.join(folderName, relativePart);
-                        if (compilePath !== newRelPath) {
-                            pushMove(compile.include, newRelPath);
-                        }
-                    }
-                }
-            }
-        }
-
-        return moves;
-    }
 
     /** 按目标文件是否已存在，将移动任务分为安全组（safe）和冲突组（conflicts） */
     private async detectConflicts(
