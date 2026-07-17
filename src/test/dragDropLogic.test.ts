@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { dedupeDragData, detectCycle, expandMoves, DragNodeData } from '../tree/dragDropLogic';
+import { dedupeDragData, detectCycle, expandMoves, isLinkedPath, DragNodeData } from '../tree/dragDropLogic';
 
 const P = 'C:/proj/Test.csproj';
 const file = (nodePath: string): DragNodeData => ({ type: 'file', projectPath: P, nodePath });
@@ -94,6 +94,20 @@ suite('dragDropLogic', () => {
             // 同一文件夹拖两次（dedupe 之外的安全网）
             const moves = expandMoves([folder('Src'), folder('Src')], 'Dst', compiles);
             assert.strictEqual(moves.length, 1);
+        });
+    });
+
+    suite('isLinkedPath', () => {
+        test('.. 与 ../ 前缀为链接路径', () => {
+            assert.strictEqual(isLinkedPath('..'), true);
+            assert.strictEqual(isLinkedPath('../Shared'), true);
+            assert.strictEqual(isLinkedPath('..\\Shared\\Foo.cs'), true);
+        });
+
+        test('常规路径不是链接路径', () => {
+            assert.strictEqual(isLinkedPath('Models/User.cs'), false);
+            assert.strictEqual(isLinkedPath('a..b/x.cs'), false);
+            assert.strictEqual(isLinkedPath(''), false);
         });
     });
 });

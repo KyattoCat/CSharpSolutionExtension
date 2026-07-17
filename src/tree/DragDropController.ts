@@ -5,7 +5,7 @@ import { CsprojProject } from '../models/CsprojModel';
 import { ProjectNode } from '../models/ProjectNode';
 import { FileService } from '../services/FileService';
 import { ProjectTreeProvider } from './ProjectTreeProvider';
-import { DragNodeData, MoveTask, dedupeDragData, detectCycle, expandMoves } from './dragDropLogic';
+import { DragNodeData, MoveTask, dedupeDragData, detectCycle, expandMoves, isLinkedPath } from './dragDropLogic';
 
 export class DragDropController implements vscode.TreeDragAndDropController<ProjectNode> {
 
@@ -25,12 +25,14 @@ export class DragDropController implements vscode.TreeDragAndDropController<Proj
         const dragData: DragNodeData[] = [];
         for (const node of source) {
             if (node.type === 'file') {
+                if (isLinkedPath(node.compile.include)) continue;
                 dragData.push({
                     type: 'file',
                     projectPath: node.projectPath,
                     nodePath: node.compile.include,
                 });
             } else if (node.type === 'folder') {
+                if (isLinkedPath(node.relPath)) continue;
                 dragData.push({
                     type: 'folder',
                     projectPath: node.projectPath,

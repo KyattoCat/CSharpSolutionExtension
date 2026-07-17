@@ -48,6 +48,12 @@ export function detectCycle(dragData: DragNodeData[], targetDir: string): 'self'
     return null;
 }
 
+/** 判断是否为链接路径（指向项目目录之外）：POSIX 归一化后等于 '..' 或以 '../' 开头 */
+export function isLinkedPath(relPath: string): boolean {
+    const p = relPath.replace(/\\/g, '/');
+    return p === '..' || p.startsWith('../');
+}
+
 /** 将拖拽节点展开为 oldRelPath → newRelPath 的移动任务列表 */
 export function expandMoves(
     dragData: DragNodeData[],

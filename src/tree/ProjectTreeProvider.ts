@@ -3,6 +3,7 @@ import * as path from 'path';
 import { CsprojProject, CompileItem, Solution } from '../models/CsprojModel';
 import { ProjectNode } from '../models/ProjectNode';
 import { ProjectDiscovery } from '../services/ProjectDiscovery';
+import { isLinkedPath } from './dragDropLogic';
 
 export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode> {
 
@@ -60,7 +61,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
                 break;
             case 'folder': {
                 item = this.folderTreeItem(path.basename(node.relPath) || node.relPath, vscode.TreeItemCollapsibleState.Collapsed);
-                item.contextValue = 'dirFolder';
+                item.contextValue = isLinkedPath(node.relPath) ? 'linkedFolder' : 'dirFolder';
                 item.id = `dir:${node.projectPath}:${node.relPath}`;
                 break;
             }
@@ -241,12 +242,15 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
             arguments: [vscode.Uri.file(absPath)],
         };
         item.id = `file:${absPath}`;
-        item.contextValue = 'file';
+        item.contextValue = isLinkedPath(compile.include) ? 'linkedFile' : 'file';
         item.tooltip = compile.include;
 
         const parts: string[] = [];
         if (compile.link) {
             parts.push(`→ ${compile.link}`);
+        }
+        if (!compile.link && isLinkedPath(compile.include)) {
+            parts.push('→ 链接');
         }
         const gitStatus = this.gitStatusMap.get(compile.include);
         if (gitStatus) {
@@ -270,7 +274,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
             children.push({ type: 'refGroup', projectPath: project.path });
         }
 
-        const folderMap = this.buildFolderTree(project.compiles, project.path);
+        const folderMap = this.buildFolderTree(project.compiles, project.path, project.folders);
         // Sort: folders first (by name), then files (by name)
         folderMap.sort((a, b) => {
             if (a.type === 'folder' && b.type === 'file') return -1;
@@ -333,7 +337,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
     }
 
     /** 从 Compile 数组构建目录树节点 */
-    private buildFolderTree(compiles: CompileItem[], projectPath: string): ProjectNode[] {
+    private buildFolderTree(compiles: CompileItem[], projectPath: string, folders: string[]): ProjectNode[] {
         const folderMap = new Map<string, CompileItem[]>();
         const rootFiles: CompileItem[] = [];
 
@@ -361,6 +365,10 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
         for (const folderRelPath of folderMap.keys()) {
             const firstSegment = folderRelPath.split('/')[0];
             topFolders.add(firstSegment);
+        }
+        // 合并空文件夹（Folder 条目 / SDK 空目录）的顶层段
+        for (const f of folders) {
+            topFolders.add(f.split('/')[0]);
         }
 
         for (const topFolder of topFolders) {
@@ -392,6 +400,18 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
                 const remaining = dir.slice(prefix.length);
                 const nextSegment = remaining.split('/')[0];
                 if (nextSegment && nextSegment !== normalizedFolder) {
+                    subFolders.add(normalizedFolder + '/' + nextSegment);
+                }
+            }
+        }
+
+        // 合并空文件夹产生的直接子目录
+        for (const f of project.folders) {
+            const fp = f.replace(/\\/g, '/');
+            if (fp.startsWith(prefix)) {
+                const remaining = fp.slice(prefix.length);
+                const nextSegment = remaining.split('/')[0];
+                if (nextSegment) {
                     subFolders.add(normalizedFolder + '/' + nextSegment);
                 }
             }
