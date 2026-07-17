@@ -188,6 +188,50 @@ export class FileService {
         }
     }
 
+    /**
+     * 删除文件夹：从非 SDK 项目的 .csproj 中移除文件夹下全部 Compile 条目，
+     * 并将物理目录移至回收站。返回移除的条目数。
+     */
+    static async deleteFolder(
+        projectPath: string,
+        folderRelPath: string,
+        compiles: CompileItem[]
+    ): Promise<number> {
+        const normalizedFolder = folderRelPath.replace(/\\/g, '/');
+        const prefix = normalizedFolder + '/';
+
+        // 前缀匹配筛出文件夹下所有条目（POSIX 归一化比较）
+        const targets = compiles.filter(c => {
+            const p = c.include.replace(/\\/g, '/');
+            return p === normalizedFolder || p.startsWith(prefix);
+        });
+
+        const csprojContent = await fs.promises.readFile(projectPath, 'utf-8');
+        const isSdk = /<Project\s+Sdk="[^"]*"/.test(csprojContent);
+
+        if (!isSdk && targets.length > 0) {
+            let updated = csprojContent;
+            for (const item of targets) {
+                updated = CsprojSerializer.removeCompile(updated, item.include);
+            }
+            await fs.promises.writeFile(projectPath, updated, 'utf-8');
+        }
+
+        // 整个目录进回收站
+        const projectDir = path.dirname(projectPath);
+        const dirAbsPath = path.join(projectDir, folderRelPath);
+        try {
+            await vscode.workspace.fs.delete(vscode.Uri.file(dirAbsPath), {
+                recursive: true,
+                useTrash: true,
+            });
+        } catch (err) {
+            console.warn(`Failed to delete folder: ${dirAbsPath}`, err);
+        }
+
+        return targets.length;
+    }
+
     private static replaceClassName(content: string, newName: string, oldName: string): string {
         const escaped = oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const typeKeyword = '(?:class|struct|interface|enum|record)';

@@ -293,4 +293,87 @@ suite('FileService', () => {
             /Source file not found/
         );
     });
+
+    test('deleteFolder 移除文件夹下全部 csproj 条目并保留其他条目', async () => {
+        const subDir = path.join(tmpDir, 'ToRemove');
+        await fs.promises.mkdir(subDir, { recursive: true });
+        await fs.promises.writeFile(path.join(subDir, 'A.cs'), 'class A { }', 'utf-8');
+        await fs.promises.writeFile(path.join(subDir, 'B.cs'), 'class B { }', 'utf-8');
+        await fs.promises.writeFile(path.join(tmpDir, 'Keep.cs'), 'class Keep { }', 'utf-8');
+
+        const csprojMulti = `<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Compile Include="ToRemove/A.cs" />
+    <Compile Include="ToRemove/B.cs" />
+    <Compile Include="Keep.cs" />
+  </ItemGroup>
+</Project>`;
+        await fs.promises.writeFile(projectPath, csprojMulti, 'utf-8');
+
+        const compiles = [
+            { include: 'ToRemove/A.cs' },
+            { include: 'ToRemove/B.cs' },
+            { include: 'Keep.cs' },
+        ];
+        const removed = await FileService.deleteFolder(projectPath, 'ToRemove', compiles);
+
+        assert.strictEqual(removed, 2);
+        const csproj = await fs.promises.readFile(projectPath, 'utf-8');
+        assert.ok(!csproj.includes('ToRemove/A.cs'));
+        assert.ok(!csproj.includes('ToRemove/B.cs'));
+        assert.ok(csproj.includes('Keep.cs'));
+        // 注：物理目录删除依赖 vscode.workspace.fs（单测环境下由扩展宿主提供，删除进回收站）
+    });
+
+    test('deleteFolder 移除嵌套子目录中的条目', async () => {
+        const deepDir = path.join(tmpDir, 'Outer', 'Inner');
+        await fs.promises.mkdir(deepDir, { recursive: true });
+        await fs.promises.writeFile(path.join(tmpDir, 'Outer', 'Top.cs'), 'class Top { }', 'utf-8');
+        await fs.promises.writeFile(path.join(deepDir, 'Deep.cs'), 'class Deep { }', 'utf-8');
+
+        const csprojNested = `<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Compile Include="Outer/Top.cs" />
+    <Compile Include="Outer/Inner/Deep.cs" />
+  </ItemGroup>
+</Project>`;
+        await fs.promises.writeFile(projectPath, csprojNested, 'utf-8');
+
+        const compiles = [
+            { include: 'Outer/Top.cs' },
+            { include: 'Outer/Inner/Deep.cs' },
+        ];
+        const removed = await FileService.deleteFolder(projectPath, 'Outer', compiles);
+
+        assert.strictEqual(removed, 2);
+        const csproj = await fs.promises.readFile(projectPath, 'utf-8');
+        assert.ok(!csproj.includes('Outer/Top.cs'));
+        assert.ok(!csproj.includes('Outer/Inner/Deep.cs'));
+    });
+
+    test('deleteFolder 兼容反斜杠分隔符的传统 .csproj', async () => {
+        const subDir = path.join(tmpDir, 'BackDir');
+        await fs.promises.mkdir(subDir, { recursive: true });
+        await fs.promises.writeFile(path.join(subDir, 'C.cs'), 'class C { }', 'utf-8');
+
+        const csprojBack = `<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Compile Include="BackDir\\C.cs" />
+    <Compile Include="Keep2.cs" />
+  </ItemGroup>
+</Project>`;
+        await fs.promises.writeFile(projectPath, csprojBack, 'utf-8');
+        await fs.promises.writeFile(path.join(tmpDir, 'Keep2.cs'), 'class Keep2 { }', 'utf-8');
+
+        const compiles = [
+            { include: 'BackDir\\C.cs' },
+            { include: 'Keep2.cs' },
+        ];
+        const removed = await FileService.deleteFolder(projectPath, 'BackDir', compiles);
+
+        assert.strictEqual(removed, 1);
+        const csproj = await fs.promises.readFile(projectPath, 'utf-8');
+        assert.ok(!csproj.includes('BackDir\\C.cs'));
+        assert.ok(csproj.includes('Keep2.cs'));
+    });
 });
