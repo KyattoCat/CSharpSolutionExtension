@@ -11,7 +11,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
 
     private solutions: Solution[] = [];
     private standaloneProjects: CsprojProject[] = [];
-    private allProjects: CsprojProject[] = [];
+    public allProjects: CsprojProject[] = [];
     private gitStatusMap: Map<string, string> = new Map();
     refresh(data?: { solutions: Solution[]; standaloneProjects: CsprojProject[]; allProjects: CsprojProject[]; gitStatusMap?: Map<string, string> }): void {
         if (data) {
