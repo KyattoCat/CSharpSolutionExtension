@@ -9,6 +9,7 @@ import { registerWatchers } from './commands/watchers';
 import { registerVcsCommands } from './commands/vcsCommands';
 import { MsBuildLocator } from './services/MsBuildLocator';
 import { TortoiseService } from './services/TortoiseService';
+import { BuildConfigService } from './services/BuildConfigService';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('C# Project Manager extension activated');
@@ -29,9 +30,20 @@ export function activate(context: vscode.ExtensionContext) {
     treeView.message = '扫描中...';
     context.subscriptions.push(treeView);
 
+    const buildConfigSvc = new BuildConfigService(context);
+    context.subscriptions.push(buildConfigSvc.createStatusBarItem());
+    context.subscriptions.push(buildConfigSvc);
+
+    // Register toggle command
+    context.subscriptions.push(
+        vscode.commands.registerCommand('csharpsolution.toggleBuildConfiguration', () => {
+            buildConfigSvc.toggle();
+        })
+    );
+
     registerNavCommands(context, treeProvider, treeView);
     registerFileCommands(context, treeProvider, treeView);
-    registerProjectCommands(context, treeProvider);
+    registerProjectCommands(context, treeProvider, buildConfigSvc);
     registerWatchers(context);
     registerVcsCommands(context);
 
