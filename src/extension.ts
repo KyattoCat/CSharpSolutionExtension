@@ -6,6 +6,7 @@ import { registerFileCommands } from './commands/fileCommands';
 import { registerProjectCommands } from './commands/projectCommands';
 import { registerNavCommands } from './commands/navCommands';
 import { registerWatchers } from './commands/watchers';
+import { registerVcsCommands } from './commands/vcsCommands';
 import { MsBuildLocator } from './services/MsBuildLocator';
 import { TortoiseService } from './services/TortoiseService';
 
@@ -32,6 +33,7 @@ export function activate(context: vscode.ExtensionContext) {
     registerFileCommands(context, treeProvider, treeView);
     registerProjectCommands(context, treeProvider);
     registerWatchers(context);
+    registerVcsCommands(context);
 
     // --- buildTool/msbuildPath 配置变更时重置 MSBuild 探测缓存 ---
     context.subscriptions.push(
