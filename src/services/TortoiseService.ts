@@ -49,7 +49,7 @@ export class TortoiseService {
                 timeout: 3000,
             });
             if (result.status === 0 && result.stdout) {
-                const match = result.stdout.match(/REG_SZ\s+(.+)/);
+                const match = result.stdout.match(/REG_(?:SZ|EXPAND_SZ)\s+(.+)/);
                 if (match) {
                     const dir = match[1].trim();
                     const exeName = vcs === 'svn' ? 'TortoiseProc.exe' : 'TortoiseGitProc.exe';
@@ -92,5 +92,10 @@ export class TortoiseService {
                 `Failed to launch TortoiseProc: ${err instanceof Error ? err.message : String(err)}`
             );
         }
+    }
+
+    /** Clear the detection cache (call when tortoiseSvnPath/tortoiseGitPath config changes) */
+    static reset(): void {
+        this.procCache.clear();
     }
 }

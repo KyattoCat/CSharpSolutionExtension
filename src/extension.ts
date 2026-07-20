@@ -7,6 +7,7 @@ import { registerProjectCommands } from './commands/projectCommands';
 import { registerNavCommands } from './commands/navCommands';
 import { registerWatchers } from './commands/watchers';
 import { MsBuildLocator } from './services/MsBuildLocator';
+import { TortoiseService } from './services/TortoiseService';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('C# Project Manager extension activated');
@@ -38,6 +39,10 @@ export function activate(context: vscode.ExtensionContext) {
             if (e.affectsConfiguration('csharpsolution.buildTool') ||
                 e.affectsConfiguration('csharpsolution.msbuildPath')) {
                 MsBuildLocator.reset();
+            }
+            if (e.affectsConfiguration('csharpsolution.tortoiseSvnPath') ||
+                e.affectsConfiguration('csharpsolution.tortoiseGitPath')) {
+                TortoiseService.reset();
             }
         })
     );
