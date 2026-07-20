@@ -7,8 +7,10 @@ suite('TortoiseService', () => {
 
     test('detectProc returns configured path when file exists', async () => {
         const config = vscode.workspace.getConfiguration('csharpsolution');
-        const cmdExe = 'C:\\Windows\\System32\\cmd.exe';
-        await config.update('tortoiseSvnPath', cmdExe, vscode.ConfigurationTarget.Global);
+        const testExe = process.platform === 'win32'
+            ? 'C:\\Windows\\System32\\cmd.exe'
+            : '/bin/sh';
+        await config.update('tortoiseSvnPath', testExe, vscode.ConfigurationTarget.Global);
         const result = TortoiseService.detectProc('svn');
         assert.strictEqual(typeof result, 'string');
         // Restore default
