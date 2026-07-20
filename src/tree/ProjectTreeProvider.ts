@@ -3,6 +3,7 @@ import * as path from 'path';
 import { CsprojProject, CompileItem, Solution } from '../models/CsprojModel';
 import { ProjectNode } from '../models/ProjectNode';
 import { ProjectDiscovery } from '../services/ProjectDiscovery';
+import { DiagnosticMonitor, ProjectFileMap } from '../services/DiagnosticMonitor';
 import { isLinkedPath } from './dragDropLogic';
 
 export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode> {
@@ -14,6 +15,12 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
     private standaloneProjects: CsprojProject[] = [];
     public allProjects: CsprojProject[] = [];
     private gitStatusMap: Map<string, string> = new Map();
+    private diagnosticMonitor?: DiagnosticMonitor;
+
+    constructor(diagnosticMonitor?: DiagnosticMonitor) {
+        this.diagnosticMonitor = diagnosticMonitor;
+    }
+
     refresh(data?: { solutions: Solution[]; standaloneProjects: CsprojProject[]; allProjects: CsprojProject[]; gitStatusMap?: Map<string, string> }): void {
         if (data) {
             this.solutions = data.solutions;
@@ -29,9 +36,11 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
     getTreeItem(node: ProjectNode): vscode.TreeItem {
         let item: vscode.TreeItem;
         switch (node.type) {
-            case 'project':
-                item = this.projectTreeItem(node.project, !!node.solutionPath);
+            case 'project': {
+                const counts = this.diagnosticMonitor?.getCounts(node.project.path);
+                item = this.projectTreeItem(node.project, !!node.solutionPath, counts);
                 break;
+            }
             case 'solution':
                 item = this.solutionTreeItem(node.solution);
                 break;
@@ -172,6 +181,17 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
         return undefined;
     }
 
+    /** Collect all project -> file mappings for diagnostic counting */
+    getProjectFileMaps(): ProjectFileMap[] {
+        const maps: ProjectFileMap[] = [];
+        for (const project of this.allProjects) {
+            const projectDir = path.dirname(project.path);
+            const files = project.compiles.map(c => path.join(projectDir, c.include));
+            maps.push({ path: project.path, files });
+        }
+        return maps;
+    }
+
     // --- Private helpers ---
 
     private solutionTreeItem(solution: Solution): vscode.TreeItem {
@@ -192,7 +212,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
         return projects.map(p => ({ type: 'project' as const, project: p, solutionPath: solution.path }));
     }
 
-    private projectTreeItem(project: CsprojProject, isSolutionChild?: boolean): vscode.TreeItem {
+    private projectTreeItem(project: CsprojProject, isSolutionChild?: boolean, diagCounts?: { errors: number; warnings: number }): vscode.TreeItem {
         const item = new vscode.TreeItem(
             project.name,
             vscode.TreeItemCollapsibleState.Expanded
@@ -200,7 +220,21 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
         item.id = `proj:${project.path}`;
         item.contextValue = isSolutionChild ? 'solutionProject' : 'project';
         item.tooltip = project.path;
-        item.description = this.relativePath(project.path);
+
+        const parts: string[] = [];
+        const relPath = this.relativePath(project.path);
+        if (relPath) {
+            parts.push(relPath);
+        }
+        if (diagCounts && (diagCounts.errors > 0 || diagCounts.warnings > 0)) {
+            parts.push(`⚠ ${diagCounts.warnings}  ✕ ${diagCounts.errors}`);
+            item.iconPath = diagCounts.errors > 0
+                ? new vscode.ThemeIcon('error', new vscode.ThemeColor('charts.red'))
+                : new vscode.ThemeIcon('warning', new vscode.ThemeColor('editorWarning.foreground'));
+        }
+        if (parts.length > 0) {
+            item.description = parts.join('  ');
+        }
         return item;
     }
 

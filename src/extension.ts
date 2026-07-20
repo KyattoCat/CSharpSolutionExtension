@@ -1,6 +1,7 @@
 // src/extension.ts
 import * as vscode from 'vscode';
 import { ProjectTreeProvider } from './tree/ProjectTreeProvider';
+import { DiagnosticMonitor } from './services/DiagnosticMonitor';
 import { DragDropController } from './tree/DragDropController';
 import { registerFileCommands } from './commands/fileCommands';
 import { registerProjectCommands } from './commands/projectCommands';
@@ -14,7 +15,10 @@ import { BuildConfigService } from './services/BuildConfigService';
 export function activate(context: vscode.ExtensionContext) {
     console.log('C# Project Manager extension activated');
 
-    const treeProvider = new ProjectTreeProvider();
+    const diagnosticMonitor = new DiagnosticMonitor();
+    context.subscriptions.push(diagnosticMonitor);
+
+    const treeProvider = new ProjectTreeProvider(diagnosticMonitor);
 
     const dragDropController = new DragDropController(treeProvider, () => {
         vscode.commands.executeCommand('csharpsolution.refresh');
@@ -41,6 +45,14 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     buildConfigSvc.createStatusBarItem();  // lifecycle managed by service.dispose()
+
+    // Wire diagnostic changes to tree refresh
+    context.subscriptions.push(
+        diagnosticMonitor.onDidChange(() => {
+            diagnosticMonitor.refresh(treeProvider.getProjectFileMaps());
+            treeProvider.refresh();
+        })
+    );
 
     registerNavCommands(context, treeProvider, treeView);
     registerFileCommands(context, treeProvider, treeView);
