@@ -417,6 +417,16 @@
           "type": "boolean",
           "default": true,
           "description": "重命名文件时自动更新 class/namespace 声明"
+        },
+        "csharpsolution.tortoiseSvnPath": {
+          "type": "string",
+          "default": "",
+          "description": "TortoiseSVN TortoiseProc.exe 完整路径（留空则自动探测）"
+        },
+        "csharpsolution.tortoiseGitPath": {
+          "type": "string",
+          "default": "",
+          "description": "TortoiseGit TortoiseGitProc.exe 完整路径（留空则自动探测）"
         }
       }
     }
