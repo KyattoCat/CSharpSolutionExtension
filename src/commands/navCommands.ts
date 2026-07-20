@@ -169,6 +169,24 @@ export function registerNavCommands(
         })
     );
 
+    // --- 编辑项目文件 ---
+    context.subscriptions.push(
+        vscode.commands.registerCommand('csharpsolution.editProjectFile', async (node: ProjectNode) => {
+            if (!node) return;
+
+            let filePath: string | undefined;
+            if (node.type === 'project') {
+                filePath = node.project.path;
+            } else if (node.type === 'solution') {
+                filePath = node.solution.path;
+            }
+            if (filePath) {
+                const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(filePath));
+                await vscode.window.showTextDocument(doc);
+            }
+        })
+    );
+
     // --- 切换标签页时自动选中对应文件节点（仅面板可见时生效） ---
     context.subscriptions.push(
         vscode.window.onDidChangeActiveTextEditor(editor => {

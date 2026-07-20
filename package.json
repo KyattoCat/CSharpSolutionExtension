@@ -6,7 +6,7 @@
   "repository": {
     "url": "https://github.com/KyattoCat/CSharpSolutionExtension"
   },
-  "version": "1.9.0",
+  "version": "1.9.1",
   "engines": {
     "vscode": "^1.93.0"
   },
@@ -112,6 +112,10 @@
       {
         "command": "csharpsolution.copyFilePath",
         "title": "复制文件路径"
+      },
+      {
+        "command": "csharpsolution.editProjectFile",
+        "title": "编辑项目文件"
       },
       {
         "command": "csharpsolution.openInTerminal",
@@ -318,6 +322,11 @@
           "group": "group2@3"
         },
         {
+          "command": "csharpsolution.editProjectFile",
+          "when": "view == csharpsolution-projects && (viewItem == project || viewItem == solutionProject)",
+          "group": "group2@4"
+        },
+        {
           "command": "csharpsolution.build",
           "when": "view == csharpsolution-projects && viewItem == solution",
           "group": "group2@1"
@@ -331,6 +340,11 @@
           "command": "csharpsolution.rebuild",
           "when": "view == csharpsolution-projects && viewItem == solution",
           "group": "group2@3"
+        },
+        {
+          "command": "csharpsolution.editProjectFile",
+          "when": "view == csharpsolution-projects && viewItem == solution",
+          "group": "group2@4"
         },
         {
           "command": "csharpsolution.addNewProject",
