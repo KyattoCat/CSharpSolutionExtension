@@ -3,28 +3,33 @@ import { BuildService } from '../services/BuildService';
 
 suite('BuildService', () => {
 
-    test('getBuildArgs 返回正确参数', () => {
-        const args = BuildService.getBuildArgs('/path/to/Test.csproj');
-        assert.deepStrictEqual(args, ['build', '/path/to/Test.csproj']);
+    test('getBuildArgs returns correct args with configuration', () => {
+        const args = BuildService.getBuildArgs('/path/to/Test.csproj', 'Release');
+        assert.deepStrictEqual(args, ['build', '/path/to/Test.csproj', '-c', 'Release']);
     });
 
-    test('getCleanArgs 返回正确参数', () => {
-        const args = BuildService.getCleanArgs('/path/to/Test.csproj');
-        assert.deepStrictEqual(args, ['clean', '/path/to/Test.csproj']);
+    test('getBuildArgs with Debug configuration', () => {
+        const args = BuildService.getBuildArgs('/path/to/Test.csproj', 'Debug');
+        assert.deepStrictEqual(args, ['build', '/path/to/Test.csproj', '-c', 'Debug']);
     });
 
-    test('getMsBuildArgs 返回正确参数', () => {
+    test('getCleanArgs returns correct args with configuration', () => {
+        const args = BuildService.getCleanArgs('/path/to/Test.csproj', 'Release');
+        assert.deepStrictEqual(args, ['clean', '/path/to/Test.csproj', '-c', 'Release']);
+    });
+
+    test('getMsBuildArgs returns correct args with configuration', () => {
         assert.deepStrictEqual(
-            BuildService.getMsBuildArgs('C:/proj/Test.csproj', 'Build'),
-            ['C:/proj/Test.csproj', '/t:Build']
+            BuildService.getMsBuildArgs('C:/proj/Test.csproj', 'Build', 'Debug'),
+            ['C:/proj/Test.csproj', '/t:Build', '/p:Configuration=Debug']
         );
         assert.deepStrictEqual(
-            BuildService.getMsBuildArgs('C:/proj/Test.csproj', 'Clean'),
-            ['C:/proj/Test.csproj', '/t:Clean']
+            BuildService.getMsBuildArgs('C:/proj/Test.csproj', 'Clean', 'Release'),
+            ['C:/proj/Test.csproj', '/t:Clean', '/p:Configuration=Release']
         );
         assert.deepStrictEqual(
-            BuildService.getMsBuildArgs('C:/proj/Test.csproj', 'Rebuild'),
-            ['C:/proj/Test.csproj', '/t:Rebuild']
+            BuildService.getMsBuildArgs('C:/proj/Test.csproj', 'Rebuild', 'Debug'),
+            ['C:/proj/Test.csproj', '/t:Rebuild', '/p:Configuration=Debug']
         );
     });
 });
