@@ -31,15 +31,16 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(treeView);
 
     const buildConfigSvc = new BuildConfigService(context);
-    context.subscriptions.push(buildConfigSvc.createStatusBarItem());
     context.subscriptions.push(buildConfigSvc);
 
-    // Register toggle command
+    // Register toggle command before creating status bar item
     context.subscriptions.push(
         vscode.commands.registerCommand('csharpsolution.toggleBuildConfiguration', () => {
             buildConfigSvc.toggle();
         })
     );
+
+    buildConfigSvc.createStatusBarItem();  // lifecycle managed by service.dispose()
 
     registerNavCommands(context, treeProvider, treeView);
     registerFileCommands(context, treeProvider, treeView);
