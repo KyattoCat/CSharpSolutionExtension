@@ -117,12 +117,116 @@
         "command": "csharpsolution.switchSolution",
         "title": "切换解决方案",
         "icon": "$(folder-swap)"
+      },
+      {
+        "command": "csharpsolution.svnUpdate",
+        "title": "SVN Update"
+      },
+      {
+        "command": "csharpsolution.svnCommit",
+        "title": "SVN Commit"
+      },
+      {
+        "command": "csharpsolution.svnDiff",
+        "title": "SVN Diff"
+      },
+      {
+        "command": "csharpsolution.svnLog",
+        "title": "SVN Log"
+      },
+      {
+        "command": "csharpsolution.svnAdd",
+        "title": "SVN Add"
+      },
+      {
+        "command": "csharpsolution.svnRevert",
+        "title": "SVN Revert"
+      },
+      {
+        "command": "csharpsolution.svnBlame",
+        "title": "SVN Blame"
+      },
+      {
+        "command": "csharpsolution.svnCleanup",
+        "title": "SVN Clean up"
+      },
+      {
+        "command": "csharpsolution.svnSwitch",
+        "title": "SVN Switch"
+      },
+      {
+        "command": "csharpsolution.svnResolve",
+        "title": "SVN Resolve"
+      },
+      {
+        "command": "csharpsolution.svnShelve",
+        "title": "SVN Shelve"
+      },
+      {
+        "command": "csharpsolution.gitPull",
+        "title": "Git Pull"
+      },
+      {
+        "command": "csharpsolution.gitPush",
+        "title": "Git Push"
+      },
+      {
+        "command": "csharpsolution.gitCommit",
+        "title": "Git Commit"
+      },
+      {
+        "command": "csharpsolution.gitDiff",
+        "title": "Git Diff"
+      },
+      {
+        "command": "csharpsolution.gitFetch",
+        "title": "Git Fetch"
+      },
+      {
+        "command": "csharpsolution.gitLog",
+        "title": "Git Log"
+      },
+      {
+        "command": "csharpsolution.gitAdd",
+        "title": "Git Add"
+      },
+      {
+        "command": "csharpsolution.gitRevert",
+        "title": "Git Revert"
+      },
+      {
+        "command": "csharpsolution.gitBlame",
+        "title": "Git Blame"
+      },
+      {
+        "command": "csharpsolution.gitCleanup",
+        "title": "Git Clean up"
+      },
+      {
+        "command": "csharpsolution.gitSwitch",
+        "title": "Git Switch"
+      },
+      {
+        "command": "csharpsolution.gitResolve",
+        "title": "Git Resolve"
+      },
+      {
+        "command": "csharpsolution.gitStash",
+        "title": "Git Stash"
       }
     ],
     "submenus": [
       {
         "id": "csharpsolution.addFileMenu",
         "label": "新建文件"
+      },
+      {
+        "id": "csharpsolution.svnMenu",
+        "label": "SVN"
+      },
+      {
+        "id": "csharpsolution.gitMenu",
+        "label": "Git"
       }
     ],
     "menus": {
@@ -343,6 +447,16 @@
           "command": "csharpsolution.excludeFromProject",
           "when": "view == csharpsolution-projects && viewItem == linkedFolder",
           "group": "group5@1"
+        },
+        {
+          "submenu": "csharpsolution.svnMenu",
+          "when": "view == csharpsolution-projects && (viewItem == file || viewItem == dirFolder)",
+          "group": "group6@1"
+        },
+        {
+          "submenu": "csharpsolution.gitMenu",
+          "when": "view == csharpsolution-projects && (viewItem == file || viewItem == dirFolder)",
+          "group": "group6@2"
         }
       ],
       "csharpsolution.addFileMenu": [
@@ -361,6 +475,106 @@
         {
           "command": "csharpsolution.addStruct",
           "group": "1_add@4"
+        }
+      ],
+      "csharpsolution.svnMenu": [
+        {
+          "command": "csharpsolution.svnUpdate",
+          "group": "1@1"
+        },
+        {
+          "command": "csharpsolution.svnCommit",
+          "group": "1@2"
+        },
+        {
+          "command": "csharpsolution.svnDiff",
+          "group": "2@1"
+        },
+        {
+          "command": "csharpsolution.svnLog",
+          "group": "2@2"
+        },
+        {
+          "command": "csharpsolution.svnAdd",
+          "group": "3@1"
+        },
+        {
+          "command": "csharpsolution.svnRevert",
+          "group": "3@2"
+        },
+        {
+          "command": "csharpsolution.svnBlame",
+          "group": "4@1"
+        },
+        {
+          "command": "csharpsolution.svnCleanup",
+          "group": "4@2"
+        },
+        {
+          "command": "csharpsolution.svnSwitch",
+          "group": "5@1"
+        },
+        {
+          "command": "csharpsolution.svnResolve",
+          "group": "5@2"
+        },
+        {
+          "command": "csharpsolution.svnShelve",
+          "group": "5@3"
+        }
+      ],
+      "csharpsolution.gitMenu": [
+        {
+          "command": "csharpsolution.gitPull",
+          "group": "1@1"
+        },
+        {
+          "command": "csharpsolution.gitPush",
+          "group": "1@2"
+        },
+        {
+          "command": "csharpsolution.gitCommit",
+          "group": "2@1"
+        },
+        {
+          "command": "csharpsolution.gitDiff",
+          "group": "2@2"
+        },
+        {
+          "command": "csharpsolution.gitFetch",
+          "group": "2@3"
+        },
+        {
+          "command": "csharpsolution.gitLog",
+          "group": "3@1"
+        },
+        {
+          "command": "csharpsolution.gitAdd",
+          "group": "3@2"
+        },
+        {
+          "command": "csharpsolution.gitRevert",
+          "group": "4@1"
+        },
+        {
+          "command": "csharpsolution.gitBlame",
+          "group": "4@2"
+        },
+        {
+          "command": "csharpsolution.gitCleanup",
+          "group": "5@1"
+        },
+        {
+          "command": "csharpsolution.gitSwitch",
+          "group": "5@2"
+        },
+        {
+          "command": "csharpsolution.gitResolve",
+          "group": "5@3"
+        },
+        {
+          "command": "csharpsolution.gitStash",
+          "group": "5@4"
         }
       ]
     },
