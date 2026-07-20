@@ -110,6 +110,10 @@
         "title": "在文件资源管理器中显示"
       },
       {
+        "command": "csharpsolution.copyFilePath",
+        "title": "复制文件路径"
+      },
+      {
         "command": "csharpsolution.openInTerminal",
         "title": "在集成终端中打开"
       },
@@ -287,6 +291,16 @@
           "command": "csharpsolution.renameFile",
           "when": "view == csharpsolution-projects && viewItem == file",
           "group": "navigation@1"
+        },
+        {
+          "command": "csharpsolution.copyFilePath",
+          "when": "view == csharpsolution-projects && viewItem == file",
+          "group": "group4@3"
+        },
+        {
+          "command": "csharpsolution.copyFilePath",
+          "when": "view == csharpsolution-projects && viewItem == linkedFile",
+          "group": "group4@3"
         },
         {
           "command": "csharpsolution.build",

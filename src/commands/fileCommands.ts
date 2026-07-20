@@ -380,6 +380,18 @@ export function registerFileCommands(
             }
         })
     );
+
+    // --- 复制文件路径 ---
+    context.subscriptions.push(
+        vscode.commands.registerCommand('csharpsolution.copyFilePath', async (node: ProjectNode) => {
+            if (!node || node.type !== 'file') return;
+
+            const projectDir = path.dirname(node.projectPath);
+            const absPath = path.join(projectDir, node.compile.include);
+            await vscode.env.clipboard.writeText(absPath);
+            vscode.window.showInformationMessage(`已复制: ${path.basename(absPath)}`);
+        })
+    );
 }
 
 type FileOrFolderNode = ProjectNode & ({ type: 'file' } | { type: 'folder' });

@@ -48,7 +48,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
                 item = this.solutionTreeItem(node.solution);
                 break;
             case 'refGroup':
-                item = this.folderTreeItem('引用', vscode.TreeItemCollapsibleState.Expanded);
+                item = this.folderTreeItem('引用', vscode.TreeItemCollapsibleState.Collapsed);
                 item.id = `refGroup:${node.projectPath}`;
                 break;
             case 'refSubGroup':
@@ -200,7 +200,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
     private solutionTreeItem(solution: Solution): vscode.TreeItem {
         const item = new vscode.TreeItem(
             solution.name,
-            vscode.TreeItemCollapsibleState.Expanded
+            vscode.TreeItemCollapsibleState.Collapsed
         );
         item.id = `sln:${solution.path}`;
         item.contextValue = 'solution';
@@ -218,7 +218,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
     private projectTreeItem(project: CsprojProject, isSolutionChild?: boolean, diagCounts?: { errors: number; warnings: number }): vscode.TreeItem {
         const item = new vscode.TreeItem(
             project.name,
-            vscode.TreeItemCollapsibleState.Expanded
+            vscode.TreeItemCollapsibleState.Collapsed
         );
         item.id = `proj:${project.path}`;
         item.contextValue = isSolutionChild ? 'solutionProject' : 'project';
