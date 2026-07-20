@@ -9,8 +9,7 @@ export class TortoiseService {
 
     /** Detect TortoiseProc.exe path (with cache) */
     static detectProc(vcs: 'svn' | 'git'): string | undefined {
-        const cached = this.procCache.get(vcs);
-        if (cached !== undefined) return cached;
+        if (this.procCache.has(vcs)) return this.procCache.get(vcs);
 
         const configKey = vcs === 'svn' ? 'tortoiseSvnPath' : 'tortoiseGitPath';
         const config = vscode.workspace.getConfiguration('csharpsolution');
