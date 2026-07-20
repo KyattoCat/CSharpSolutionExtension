@@ -124,6 +124,7 @@
       {
         "command": "csharpsolution.switchSolution",
         "title": "切换解决方案",
+        "category": "C# Project Manager",
         "icon": "$(folder-swap)"
       },
       {
