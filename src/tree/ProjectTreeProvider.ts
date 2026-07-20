@@ -29,6 +29,9 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
             if (data.gitStatusMap) {
                 this.gitStatusMap = data.gitStatusMap;
             }
+            if (this.diagnosticMonitor) {
+                this.diagnosticMonitor.refresh(this.getProjectFileMaps());
+            }
         }
         this._onDidChangeTreeData.fire();
     }
@@ -229,7 +232,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
         if (diagCounts && (diagCounts.errors > 0 || diagCounts.warnings > 0)) {
             parts.push(`⚠ ${diagCounts.warnings}  ✕ ${diagCounts.errors}`);
             item.iconPath = diagCounts.errors > 0
-                ? new vscode.ThemeIcon('error', new vscode.ThemeColor('charts.red'))
+                ? new vscode.ThemeIcon('error', new vscode.ThemeColor('errorForeground'))
                 : new vscode.ThemeIcon('warning', new vscode.ThemeColor('editorWarning.foreground'));
         }
         if (parts.length > 0) {
