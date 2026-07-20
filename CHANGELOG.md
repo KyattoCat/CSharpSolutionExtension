@@ -6,6 +6,16 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-07-20
+
+### Added
+- 状态栏构建配置切换（Debug/Release），点击切换，工作区持久化
+- C# 诊断装饰：项目节点显示错误/警告数量（红色 `✕ N` / 黄色 `⚠ N`）
+- 右键「复制文件路径」，将绝对路径写入剪贴板
+
+### Changed
+- 项目树默认折叠所有节点（解决方案、项目、引用）
+
 ## [1.8.0] - 2026-07-20
 
 ### Added

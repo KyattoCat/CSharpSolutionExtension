@@ -18,6 +18,10 @@
 - **集成终端** — 右键节点 → 在集成终端中打开对应目录
 - **添加现有文件/项目** — 将现有文件加入项目，或将项目加入解决方案
 - **构建集成** — 右键项目/方案 → 生成、清理、重新生成；`buildTool` 配置支持 dotnet / MSBuild（vswhere 自动探测），传统项目自动选 MSBuild
+- **构建配置切换** — 状态栏显示 Debug/Release，点击切换，持久化到工作区
+- **诊断装饰** — C# 扩展的错误/警告数显示在项目节点上（有错误红图标 `✕ N`，仅警告黄图标 `⚠ N`）
+- **VCS 集成** — 右键 TortoiseSVN / TortoiseGit 菜单，自动探测安装路径；支持 git/svn 状态装饰
+- **复制文件路径** — 右键文件 → 复制绝对路径到剪贴板
 - **新增项目** — 方案右键 → 选模板创建新项目并加入方案
 - **文件资源管理器** — 右键节点 → 在系统文件管理器中定位
 - **SDK 项目** — 支持 `<Project Sdk="...">` 格式，自动 glob 文件列表
@@ -28,6 +32,10 @@
 | 配置项 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
 | `csharpsolution.vcs` | `string` | `"git"` | 版本控制系统（`git` / `svn` / `none`） |
+| `csharpsolution.buildTool` | `string` | `"auto"` | 构建工具（`auto` / `dotnet` / `msbuild`） |
+| `csharpsolution.msbuildPath` | `string` | `""` | MSBuild.exe 路径（留空自动探测） |
+| `csharpsolution.tortoiseSvnPath` | `string` | `""` | TortoiseProc.exe 路径（SVN，留空自动探测） |
+| `csharpsolution.tortoiseGitPath` | `string` | `""` | TortoiseGitProc.exe 路径（Git，留空自动探测） |
 | `csharpsolution.excludePatterns` | `string[]` | `[]` | 额外的排除 glob 模式 |
 | `csharpsolution.defaultNamespace` | `string` | `""` | 默认根命名空间（留空使用项目名） |
 | `csharpsolution.renameSyncCode` | `boolean` | `true` | 重命名时自动更新 class 声明 |
