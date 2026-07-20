@@ -6,7 +6,7 @@
   "repository": {
     "url": "https://github.com/KyattoCat/CSharpSolutionExtension"
   },
-  "version": "1.9.1",
+  "version": "1.9.2",
   "engines": {
     "vscode": "^1.93.0"
   },
