@@ -112,6 +112,11 @@
       {
         "command": "csharpsolution.openInTerminal",
         "title": "在集成终端中打开"
+      },
+      {
+        "command": "csharpsolution.switchSolution",
+        "title": "切换解决方案",
+        "icon": "$(folder-swap)"
       }
     ],
     "submenus": [
@@ -125,7 +130,12 @@
         {
           "command": "csharpsolution.refresh",
           "when": "view == csharpsolution-projects",
-          "group": "navigation"
+          "group": "navigation@2"
+        },
+        {
+          "command": "csharpsolution.switchSolution",
+          "when": "view == csharpsolution-projects",
+          "group": "navigation@1"
         }
       ],
       "view/item/context": [
