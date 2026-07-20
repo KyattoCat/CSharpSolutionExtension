@@ -6,6 +6,14 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-07-20
+
+### Added
+- 文件/文件夹右键菜单集成 TortoiseSVN（Update/Commit/Diff/Log/Add/Revert/Blame/Clean up/Switch/Resolve/Shelve）
+- 文件/文件夹右键菜单集成 TortoiseGit（Pull/Push/Commit/Diff/Fetch/Log/Add/Revert/Blame/Clean up/Switch/Resolve/Stash）
+- 自动探测 TortoiseProc.exe 路径（配置项 → 常见路径 → 注册表）
+- 新增配置项 `csharpsolution.tortoiseSvnPath` 和 `csharpsolution.tortoiseGitPath`
+
 ## [1.7.0] - 2026-07-17
 
 ### Added
