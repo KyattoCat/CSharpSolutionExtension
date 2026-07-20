@@ -16,48 +16,48 @@ export class BuildService {
         return this.channel;
     }
 
-    static async build(projectPath: string, projectName: string, hasLegacyProject: boolean): Promise<void> {
+    static async build(projectPath: string, projectName: string, hasLegacyProject: boolean, configuration: string): Promise<void> {
         const resolved = await this.resolveTool(hasLegacyProject);
         if (!resolved) return;
         const args = resolved.tool === 'msbuild'
-            ? this.getMsBuildArgs(projectPath, 'Build')
-            : this.getBuildArgs(projectPath);
+            ? this.getMsBuildArgs(projectPath, 'Build', configuration)
+            : this.getBuildArgs(projectPath, configuration);
         await this.runTool(resolved.exe, args, projectPath, projectName, '生成');
     }
 
-    static async clean(projectPath: string, projectName: string, hasLegacyProject: boolean): Promise<void> {
+    static async clean(projectPath: string, projectName: string, hasLegacyProject: boolean, configuration: string): Promise<void> {
         const resolved = await this.resolveTool(hasLegacyProject);
         if (!resolved) return;
         const args = resolved.tool === 'msbuild'
-            ? this.getMsBuildArgs(projectPath, 'Clean')
-            : this.getCleanArgs(projectPath);
+            ? this.getMsBuildArgs(projectPath, 'Clean', configuration)
+            : this.getCleanArgs(projectPath, configuration);
         await this.runTool(resolved.exe, args, projectPath, projectName, '清理');
     }
 
-    static async rebuild(projectPath: string, projectName: string, hasLegacyProject: boolean): Promise<void> {
+    static async rebuild(projectPath: string, projectName: string, hasLegacyProject: boolean, configuration: string): Promise<void> {
         const resolved = await this.resolveTool(hasLegacyProject);
         if (!resolved) return;
         if (resolved.tool === 'msbuild') {
             // MSBuild 原生 Rebuild target，单次调用
-            await this.runTool(resolved.exe, this.getMsBuildArgs(projectPath, 'Rebuild'), projectPath, projectName, '重新生成');
+            await this.runTool(resolved.exe, this.getMsBuildArgs(projectPath, 'Rebuild', configuration), projectPath, projectName, '重新生成');
             return;
         }
-        const cleanOk = await this.runTool(resolved.exe, this.getCleanArgs(projectPath), projectPath, projectName, '清理');
+        const cleanOk = await this.runTool(resolved.exe, this.getCleanArgs(projectPath, configuration), projectPath, projectName, '清理');
         if (!cleanOk) return;
-        await this.runTool(resolved.exe, this.getBuildArgs(projectPath), projectPath, projectName, '生成');
+        await this.runTool(resolved.exe, this.getBuildArgs(projectPath, configuration), projectPath, projectName, '生成');
     }
 
     // Test helpers
-    static getBuildArgs(projectPath: string): string[] {
-        return ['build', projectPath];
+    static getBuildArgs(projectPath: string, configuration: string): string[] {
+        return ['build', projectPath, '-c', configuration];
     }
 
-    static getCleanArgs(projectPath: string): string[] {
-        return ['clean', projectPath];
+    static getCleanArgs(projectPath: string, configuration: string): string[] {
+        return ['clean', projectPath, '-c', configuration];
     }
 
-    static getMsBuildArgs(projectPath: string, target: 'Build' | 'Clean' | 'Rebuild'): string[] {
-        return [projectPath, `/t:${target}`];
+    static getMsBuildArgs(projectPath: string, target: 'Build' | 'Clean' | 'Rebuild', configuration: string): string[] {
+        return [projectPath, `/t:${target}`, `/p:Configuration=${configuration}`];
     }
 
     /**
