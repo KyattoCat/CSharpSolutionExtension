@@ -19,6 +19,7 @@ export class BuildConfigService {
     }
 
     createStatusBarItem(): vscode.StatusBarItem {
+        if (this.statusBarItem) return this.statusBarItem;
         this.statusBarItem = vscode.window.createStatusBarItem(
             vscode.StatusBarAlignment.Right,
             100
@@ -48,5 +49,7 @@ export class BuildConfigService {
 
     dispose(): void {
         this.statusBarItem?.dispose();
+        this.statusBarItem = undefined;
+        this._onDidChangeConfiguration.dispose();
     }
 }
