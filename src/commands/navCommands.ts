@@ -5,8 +5,8 @@ import { Solution } from '../models/CsprojModel';
 import { ProjectNode } from '../models/ProjectNode';
 import { ProjectTreeProvider } from '../tree/ProjectTreeProvider';
 import { ProjectDiscovery } from '../services/ProjectDiscovery';
-import { GitStatusService } from '../services/GitStatusService';
 import { SvnStatusService } from '../services/SvnStatusService';
+import { StatusDecorationProvider } from '../services/StatusDecorationProvider';
 
 /** 当前选中的解决方案路径（模块级状态，跨 refresh 保持） */
 let currentSolutionPath: string | undefined;
@@ -62,7 +62,8 @@ async function resolveSolutions(solutions: Solution[]): Promise<Solution[]> {
 export function registerNavCommands(
     context: vscode.ExtensionContext,
     treeProvider: ProjectTreeProvider,
-    treeView: vscode.TreeView<ProjectNode>
+    treeView: vscode.TreeView<ProjectNode>,
+    statusDecorationProvider: StatusDecorationProvider
 ): void {
     // --- 刷新面板 ---
     context.subscriptions.push(
@@ -73,11 +74,13 @@ export function registerNavCommands(
             const result = await ProjectDiscovery.scan(excludes);
             const rootPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
             const vcs = config.get<string>('vcs', 'git');
-            let gitStatusMap: Map<string, string> = new Map();
-            if (vcs === 'git') {
-                gitStatusMap = rootPath ? await GitStatusService.getStatus(rootPath) : new Map();
-            } else if (vcs === 'svn') {
-                gitStatusMap = rootPath ? await SvnStatusService.getStatus(rootPath) : new Map();
+            // Git: VS Code 内置 Git 扩展通过 resourceUri 自动装饰，无需手动收集
+            // SVN: 收集状态后交给 StatusDecorationProvider 渲染彩色角标（并启用文件变更自动刷新）
+            if (vcs === 'svn' && rootPath) {
+                const svnStatusMap = await SvnStatusService.getStatus(rootPath);
+                statusDecorationProvider.enable(rootPath, svnStatusMap);
+            } else if (vcs !== 'svn') {
+                statusDecorationProvider.clear();
             }
             const activeSolutions = await resolveSolutions(result.solutions);
             const hasSolution = activeSolutions.length > 0;
@@ -89,7 +92,6 @@ export function registerNavCommands(
                 solutions: activeSolutions,
                 standaloneProjects: hasSolution ? [] : result.standaloneProjects,
                 allProjects: result.allProjects,
-                gitStatusMap,
             });
             treeView.message = (!hasSolution && result.standaloneProjects.length === 0) ? '未发现 C# 项目' : undefined;
         })

@@ -14,21 +14,17 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
     private solutions: Solution[] = [];
     private standaloneProjects: CsprojProject[] = [];
     public allProjects: CsprojProject[] = [];
-    private gitStatusMap: Map<string, string> = new Map();
     private diagnosticMonitor?: DiagnosticMonitor;
 
     constructor(diagnosticMonitor?: DiagnosticMonitor) {
         this.diagnosticMonitor = diagnosticMonitor;
     }
 
-    refresh(data?: { solutions: Solution[]; standaloneProjects: CsprojProject[]; allProjects: CsprojProject[]; gitStatusMap?: Map<string, string> }): void {
+    refresh(data?: { solutions: Solution[]; standaloneProjects: CsprojProject[]; allProjects: CsprojProject[] }): void {
         if (data) {
             this.solutions = data.solutions;
             this.standaloneProjects = data.standaloneProjects;
             this.allProjects = data.allProjects;
-            if (data.gitStatusMap) {
-                this.gitStatusMap = data.gitStatusMap;
-            }
             if (this.diagnosticMonitor) {
                 this.diagnosticMonitor.refresh(this.getProjectFileMaps());
             }
@@ -75,6 +71,8 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
                 item = this.folderTreeItem(path.basename(node.relPath) || node.relPath, vscode.TreeItemCollapsibleState.Collapsed);
                 item.contextValue = isLinkedPath(node.relPath) ? 'linkedFolder' : 'dirFolder';
                 item.id = `dir:${node.projectPath}:${node.relPath}`;
+                const projectDir = path.dirname(node.projectPath);
+                item.resourceUri = vscode.Uri.file(path.join(projectDir, node.relPath));
                 break;
             }
             case 'file':
@@ -288,10 +286,6 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
         }
         if (!compile.link && isLinkedPath(compile.include)) {
             parts.push('→ 链接');
-        }
-        const gitStatus = this.gitStatusMap.get(compile.include);
-        if (gitStatus) {
-            parts.push(gitStatus);
         }
         if (parts.length > 0) {
             item.description = parts.join('  ');

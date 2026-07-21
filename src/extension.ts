@@ -11,6 +11,7 @@ import { registerVcsCommands } from './commands/vcsCommands';
 import { MsBuildLocator } from './services/MsBuildLocator';
 import { TortoiseService } from './services/TortoiseService';
 import { BuildConfigService } from './services/BuildConfigService';
+import { StatusDecorationProvider } from './services/StatusDecorationProvider';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('C# Project Manager extension activated');
@@ -46,6 +47,20 @@ export function activate(context: vscode.ExtensionContext) {
 
     buildConfigSvc.createStatusBarItem();  // lifecycle managed by service.dispose()
 
+    // SVN 状态装饰：通过 FileDecorationProvider 实现彩色角标，与原生 Git 标记视觉一致
+    const statusDecorationProvider = new StatusDecorationProvider();
+    context.subscriptions.push(
+        vscode.window.registerFileDecorationProvider(statusDecorationProvider)
+    );
+    context.subscriptions.push(statusDecorationProvider);
+
+    // 监听文件变更，自动刷新 SVN 状态装饰（防抖在 provider 内部处理）
+    const vcsFileWatcher = vscode.workspace.createFileSystemWatcher('**/*');
+    vcsFileWatcher.onDidChange(() => statusDecorationProvider.onFileChanged());
+    vcsFileWatcher.onDidCreate(() => statusDecorationProvider.onFileChanged());
+    vcsFileWatcher.onDidDelete(() => statusDecorationProvider.onFileChanged());
+    context.subscriptions.push(vcsFileWatcher);
+
     // Wire diagnostic changes to tree refresh
     context.subscriptions.push(
         diagnosticMonitor.onDidChange(() => {
@@ -54,7 +69,7 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
-    registerNavCommands(context, treeProvider, treeView);
+    registerNavCommands(context, treeProvider, treeView, statusDecorationProvider);
     registerFileCommands(context, treeProvider, treeView);
     registerProjectCommands(context, treeProvider, buildConfigSvc);
     registerWatchers(context);

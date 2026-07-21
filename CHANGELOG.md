@@ -6,6 +6,15 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.9.4] - 2026-07-21
+
+### Added
+- VCS 状态装饰升级：Git 文件通过 `resourceUri` 获得原生彩色角标，SVN 文件通过自定义 `FileDecorationProvider` 实现同款彩色角标（M/A/D/? 等）
+- 文件变更后 SVN 状态自动刷新（防抖 2s），无需手动刷新面板
+
+### Changed
+- 文件节点 VCS 状态从灰色 `description` 文字改为右侧彩色角标，与 VS Code 原生 SCM 视图一致
+
 ## [1.9.3] - 2026-07-21
 
 ### Added
