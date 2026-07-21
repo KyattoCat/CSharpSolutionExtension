@@ -1,5 +1,9 @@
 # CSharpSolution
 
+<div align="center">
+  <img src="icon.png" alt="CSharpSolution" width="128" />
+</div>
+
 管理 C# 项目（传统/SDK `.csproj`、`.sln`/`.slnx`）的 VS Code 扩展。
 
 ## 功能

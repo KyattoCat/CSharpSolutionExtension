@@ -2,16 +2,22 @@
   "name": "csharpsolution",
   "displayName": "CSharpSolution",
   "description": "C# 项目管理扩展，支持传统/SDK 项目浏览、文件增删改、构建配置切换、诊断装饰及 TortoiseSVN/Git 集成",
-  "publisher": "kyattocat",
+  "publisher": "KyattoCat",
   "repository": {
-    "url": "https://github.com/KyattoCat/CSharpSolutionExtension"
+    "type": "git",
+    "url": "https://github.com/KyattoCat/CSharpSolutionExtension.git"
   },
-  "version": "1.9.2",
+  "bugs": {
+    "url": "https://github.com/KyattoCat/CSharpSolutionExtension/issues"
+  },
+  "license": "MIT",
+  "icon": "icon.png",
+  "version": "1.9.3",
   "engines": {
     "vscode": "^1.93.0"
   },
   "categories": [
-    "Other"
+    "Programming Languages"
   ],
   "activationEvents": [
     "workspaceContains:**/*.csproj"

@@ -6,6 +6,22 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.9.3] - 2026-07-21
+
+### Added
+- 扩展图标，在 VS Code Marketplace 和扩展管理器中显示
+- README 添加图标展示
+
+## [1.9.2] - 2026-07-21
+
+### Fixed
+- 为 `switchSolution` 命令添加 `category`，使其在命令面板中可被搜索发现
+
+## [1.9.1] - 2026-07-21
+
+### Added
+- 右键「编辑项目文件」，直接在编辑器中打开 `.csproj`
+
 ## [1.9.0] - 2026-07-20
 
 ### Added
