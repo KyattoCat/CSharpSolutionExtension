@@ -1,7 +1,7 @@
 {
   "name": "csharpsolution",
-  "displayName": "CSharpSolution",
-  "description": "C# 项目管理扩展，支持传统/SDK 项目浏览、文件增删改、构建配置切换、诊断装饰及 TortoiseSVN/Git 集成",
+  "displayName": "%displayName%",
+  "description": "%description%",
   "publisher": "KyattoCat",
   "repository": {
     "type": "git",
@@ -12,7 +12,7 @@
   },
   "license": "MIT",
   "icon": "icon.png",
-  "version": "1.9.4",
+  "version": "1.9.5",
   "engines": {
     "vscode": "^1.93.0"
   },
@@ -28,7 +28,7 @@
       "activitybar": [
         {
           "id": "csharpsolution",
-          "title": "C# 项目管理",
+          "title": "%viewsContainers.activitybar.csharpsolution%",
           "icon": "$(folder-library)"
         }
       ]
@@ -37,211 +37,256 @@
       "csharpsolution": [
         {
           "id": "csharpsolution-projects",
-          "name": "项目管理"
+          "name": "%views.csharpsolution-projects%"
         }
       ]
     },
     "commands": [
       {
         "command": "csharpsolution.refresh",
-        "title": "刷新项目管理",
+        "title": "%command.refresh%",
+        "category": "%category%",
         "icon": "$(refresh)"
       },
       {
         "command": "csharpsolution.addClass",
-        "title": "添加类..."
+        "title": "%command.addClass%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.addInterface",
-        "title": "添加接口..."
+        "title": "%command.addInterface%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.addEnum",
-        "title": "添加枚举..."
+        "title": "%command.addEnum%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.addStruct",
-        "title": "添加结构体..."
+        "title": "%command.addStruct%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.addFolder",
-        "title": "新建文件夹..."
+        "title": "%command.addFolder%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.excludeFromProject",
-        "title": "从项目排除"
+        "title": "%command.excludeFromProject%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.deleteFile",
-        "title": "删除"
+        "title": "%command.deleteFile%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.addExistingFile",
-        "title": "添加现有文件..."
+        "title": "%command.addExistingFile%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.removePackage",
-        "title": "移除包"
+        "title": "%command.removePackage%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.renameFile",
-        "title": "重命名"
+        "title": "%command.renameFile%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.build",
-        "title": "生成"
+        "title": "%command.build%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.clean",
-        "title": "清理"
+        "title": "%command.clean%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.rebuild",
-        "title": "重新生成"
+        "title": "%command.rebuild%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.addNewProject",
-        "title": "添加新项目..."
+        "title": "%command.addNewProject%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.addExistingProject",
-        "title": "添加已有项目..."
+        "title": "%command.addExistingProject%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.removeProjectFromSolution",
-        "title": "从解决方案移除"
+        "title": "%command.removeProjectFromSolution%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.revealInExplorer",
-        "title": "在文件资源管理器中显示"
+        "title": "%command.revealInExplorer%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.copyFilePath",
-        "title": "复制文件路径"
+        "title": "%command.copyFilePath%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.editProjectFile",
-        "title": "编辑项目文件"
+        "title": "%command.editProjectFile%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.openInTerminal",
-        "title": "在集成终端中打开"
+        "title": "%command.openInTerminal%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.switchSolution",
-        "title": "切换解决方案",
-        "category": "C# Project Manager",
+        "title": "%command.switchSolution%",
+        "category": "%category%",
         "icon": "$(folder-swap)"
       },
       {
         "command": "csharpsolution.svnUpdate",
-        "title": "SVN Update"
+        "title": "%command.svnUpdate%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.svnCommit",
-        "title": "SVN Commit"
+        "title": "%command.svnCommit%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.svnDiff",
-        "title": "SVN Diff"
+        "title": "%command.svnDiff%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.svnLog",
-        "title": "SVN Log"
+        "title": "%command.svnLog%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.svnAdd",
-        "title": "SVN Add"
+        "title": "%command.svnAdd%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.svnRevert",
-        "title": "SVN Revert"
+        "title": "%command.svnRevert%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.svnBlame",
-        "title": "SVN Blame"
+        "title": "%command.svnBlame%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.svnCleanup",
-        "title": "SVN Clean up"
+        "title": "%command.svnCleanup%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.svnSwitch",
-        "title": "SVN Switch"
+        "title": "%command.svnSwitch%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.svnResolve",
-        "title": "SVN Resolve"
+        "title": "%command.svnResolve%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.svnShelve",
-        "title": "SVN Shelve"
+        "title": "%command.svnShelve%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.gitPull",
-        "title": "Git Pull"
+        "title": "%command.gitPull%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.gitPush",
-        "title": "Git Push"
+        "title": "%command.gitPush%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.gitCommit",
-        "title": "Git Commit"
+        "title": "%command.gitCommit%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.gitDiff",
-        "title": "Git Diff"
+        "title": "%command.gitDiff%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.gitFetch",
-        "title": "Git Fetch"
+        "title": "%command.gitFetch%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.gitLog",
-        "title": "Git Log"
+        "title": "%command.gitLog%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.gitAdd",
-        "title": "Git Add"
+        "title": "%command.gitAdd%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.gitRevert",
-        "title": "Git Revert"
+        "title": "%command.gitRevert%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.gitBlame",
-        "title": "Git Blame"
+        "title": "%command.gitBlame%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.gitCleanup",
-        "title": "Git Clean up"
+        "title": "%command.gitCleanup%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.gitSwitch",
-        "title": "Git Switch"
+        "title": "%command.gitSwitch%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.gitResolve",
-        "title": "Git Resolve"
+        "title": "%command.gitResolve%",
+        "category": "%category%"
       },
       {
         "command": "csharpsolution.gitStash",
-        "title": "Git Stash"
+        "title": "%command.gitStash%",
+        "category": "%category%"
       }
     ],
     "submenus": [
       {
         "id": "csharpsolution.addFileMenu",
-        "label": "新建文件"
+        "label": "%submenu.addFileMenu%"
       },
       {
         "id": "csharpsolution.svnMenu",
-        "label": "SVN"
+        "label": "%submenu.svnMenu%"
       },
       {
         "id": "csharpsolution.gitMenu",
-        "label": "Git"
+        "label": "%submenu.gitMenu%"
       }
     ],
     "menus": {
@@ -626,18 +671,18 @@
       }
     ],
     "configuration": {
-      "title": "C# Project Manager",
+      "title": "%category%",
       "properties": {
         "csharpsolution.buildTool": {
           "type": "string",
           "enum": ["auto", "dotnet", "msbuild"],
           "default": "auto",
-          "description": "构建工具：auto 按项目类型选择（传统项目优先 MSBuild），或强制指定"
+          "description": "%config.buildTool%"
         },
         "csharpsolution.msbuildPath": {
           "type": "string",
           "default": "",
-          "description": "msbuild.exe 完整路径（留空则通过 vswhere/PATH 自动探测）"
+          "description": "%config.msbuildPath%"
         },
         "csharpsolution.vcs": {
           "type": "string",
@@ -647,7 +692,7 @@
             "none"
           ],
           "default": "git",
-          "description": "版本控制系统（SVN 需要命令行工具）"
+          "description": "%config.vcs%"
         },
         "csharpsolution.excludePatterns": {
           "type": "array",
@@ -655,27 +700,27 @@
             "type": "string"
           },
           "default": [],
-          "description": "额外的排除 glob 模式（与默认的 node_modules/bin/obj 合并）"
+          "description": "%config.excludePatterns%"
         },
         "csharpsolution.defaultNamespace": {
           "type": "string",
           "default": "",
-          "description": "默认根命名空间（留空则使用项目名称作为命名空间）"
+          "description": "%config.defaultNamespace%"
         },
         "csharpsolution.renameSyncCode": {
           "type": "boolean",
           "default": true,
-          "description": "重命名文件时自动更新 class/namespace 声明"
+          "description": "%config.renameSyncCode%"
         },
         "csharpsolution.tortoiseSvnPath": {
           "type": "string",
           "default": "",
-          "description": "TortoiseSVN TortoiseProc.exe 完整路径（留空则自动探测）"
+          "description": "%config.tortoiseSvnPath%"
         },
         "csharpsolution.tortoiseGitPath": {
           "type": "string",
           "default": "",
-          "description": "TortoiseGit TortoiseGitProc.exe 完整路径（留空则自动探测）"
+          "description": "%config.tortoiseGitPath%"
         }
       }
     }

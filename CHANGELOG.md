@@ -6,6 +6,12 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.9.5] - 2026-07-21
+
+### Changed
+- 所有命令统一添加 `category`（C# Project Manager），在命令面板中可按类别统一检索
+- 命令国际化改造：引入 `package.nls.json` + `package.nls.zh-cn.json`，命令面板同时显示中英双语（如 `切换解决方案` / `Switch Solution`），中英文输入均可检索
+
 ## [1.9.4] - 2026-07-21
 
 ### Added
