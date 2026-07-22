@@ -44,9 +44,10 @@ export function registerFileCommands(
                 try {
                     const config = vscode.workspace.getConfiguration('csharpsolution');
                     const defaultNs = config.get<string>('defaultNamespace', '') || projectName;
-                    await CsprojService.addType(projectPath, dirPath, name, kind, defaultNs);
+                    const fileUri = await CsprojService.addType(projectPath, dirPath, name, kind, defaultNs);
                     vscode.window.showInformationMessage(`已创建${label}: ${name}.cs`);
                     vscode.commands.executeCommand('csharpsolution.refresh');
+                    await vscode.window.showTextDocument(fileUri);
                 } catch (err) {
                     vscode.window.showErrorMessage(
                         `添加${label}失败: ${err instanceof Error ? err.message : String(err)}`

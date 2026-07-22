@@ -190,13 +190,25 @@ export function registerNavCommands(
     );
 
     // --- 切换标签页时自动选中对应文件节点（仅面板可见时生效） ---
+    const revealActiveEditor = () => {
+        const editor = vscode.window.activeTextEditor;
+        if (editor?.document.uri.scheme === 'file' && treeView.visible) {
+            const node = treeProvider.findNodeByUri(editor.document.uri);
+            if (node) {
+                treeView.reveal(node, { select: true, focus: false, expand: true });
+            }
+        }
+    };
+
     context.subscriptions.push(
-        vscode.window.onDidChangeActiveTextEditor(editor => {
-            if (editor?.document.uri.scheme === 'file' && treeView.visible) {
-                const node = treeProvider.findNodeByUri(editor.document.uri);
-                if (node) {
-                    treeView.reveal(node, { select: true, focus: false, expand: true });
-                }
+        vscode.window.onDidChangeActiveTextEditor(() => revealActiveEditor())
+    );
+
+    // --- 切换到本侧边栏时，根据当前打开的文件做一次 reveal ---
+    context.subscriptions.push(
+        treeView.onDidChangeVisibility(({ visible }) => {
+            if (visible) {
+                revealActiveEditor();
             }
         })
     );

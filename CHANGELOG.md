@@ -6,6 +6,12 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.9.6] - 2026-07-22
+
+### Added
+- 新建类/接口/枚举/结构体后自动打开生成的文件
+- 切换到项目管理侧边栏时，自动定位到当前活动编辑器中的文件
+
 ## [1.9.5] - 2026-07-21
 
 ### Changed
