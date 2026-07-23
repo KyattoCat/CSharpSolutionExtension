@@ -48,6 +48,12 @@ function resolveNodePath(node: ProjectNode): string | undefined {
     if (node.type === 'folder') {
         return path.resolve(path.dirname(node.projectPath), node.relPath);
     }
+    if (node.type === 'project') {
+        return path.dirname(node.project.path);
+    }
+    if (node.type === 'solution') {
+        return path.dirname(node.solution.path);
+    }
     return undefined;
 }
 
@@ -56,7 +62,7 @@ export function registerVcsCommands(context: vscode.ExtensionContext): void {
     for (const def of VCS_COMMANDS) {
         context.subscriptions.push(
             vscode.commands.registerCommand(`csharpsolution.${def.id}`, async (node: ProjectNode) => {
-                if (!node || (node.type !== 'file' && node.type !== 'folder')) return;
+                if (!node || (node.type !== 'file' && node.type !== 'folder' && node.type !== 'project' && node.type !== 'solution')) return;
                 const filePath = resolveNodePath(node);
                 if (!filePath) return;
                 TortoiseService.execute(def.vcs, def.cmd, filePath);

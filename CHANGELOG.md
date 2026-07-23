@@ -6,6 +6,11 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.9.7] - 2026-07-23
+
+### Changed
+- VCS 右键菜单（TortoiseSVN / TortoiseGit）扩展至项目节点和解决方案节点，不再仅限于文件/文件夹
+
 ## [1.9.6] - 2026-07-22
 
 ### Added

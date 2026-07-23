@@ -12,7 +12,7 @@
   },
   "license": "MIT",
   "icon": "icon.png",
-  "version": "1.9.6",
+  "version": "1.9.7",
   "engines": {
     "vscode": "^1.93.0"
   },
@@ -530,12 +530,12 @@
         },
         {
           "submenu": "csharpsolution.svnMenu",
-          "when": "view == csharpsolution-projects && (viewItem == file || viewItem == dirFolder)",
+          "when": "view == csharpsolution-projects && (viewItem == file || viewItem == dirFolder || viewItem == project || viewItem == solutionProject || viewItem == solution)",
           "group": "group6@1"
         },
         {
           "submenu": "csharpsolution.gitMenu",
-          "when": "view == csharpsolution-projects && (viewItem == file || viewItem == dirFolder)",
+          "when": "view == csharpsolution-projects && (viewItem == file || viewItem == dirFolder || viewItem == project || viewItem == solutionProject || viewItem == solution)",
           "group": "group6@2"
         }
       ],
