@@ -6,6 +6,16 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.9.8] - 2026-07-28
+
+### Fixed
+- SVN 状态标记提交后不更新 — 新增窗口焦点监听，用户从外部 SVN 工具切回 VS Code 时自动刷新；VCS 命令执行后触发状态刷新
+- 从其他侧边栏切换到项目管理面板时，自动定位到当前活动文件不生效 — 修复 `onDidChangeVisibility` 中 `treeView.visible` 属性滞后问题
+- 树节点收缩状态时无法自动展开定位到目标文件 — 修复 `getParent` 链条中 `solutionPath` 缺失导致父节点断裂
+
+### Added
+- 首次加载 / 刷新面板后自动定位到当前活动编辑器中的文件
+
 ## [1.9.7] - 2026-07-23
 
 ### Changed

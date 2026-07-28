@@ -113,6 +113,25 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
         }
     }
 
+    /** 查找项目所属的 solution（用于 getParent 链条回溯） */
+    private findSolutionForProject(projectPath: string): Solution | undefined {
+        const norm = (p: string) => p.replace(/\\/g, '/');
+        const target = norm(projectPath);
+        for (const s of this.solutions) {
+            const solutionDir = path.dirname(s.path);
+            for (const sp of s.projects) {
+                if (norm(path.resolve(solutionDir, sp.relPath)) === target) return s;
+            }
+        }
+        return undefined;
+    }
+
+    /** 创建 project 节点的工厂方法，自动补全 solutionPath */
+    private projectParentNode(project: CsprojProject): ProjectNode {
+        const solution = this.findSolutionForProject(project.path);
+        return { type: 'project', project, solutionPath: solution?.path };
+    }
+
     getParent(node: ProjectNode): ProjectNode | undefined {
         switch (node.type) {
             case 'project':
@@ -130,7 +149,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
                 if (dir && dir !== '.') {
                     return { type: 'folder', relPath: dir, projectPath: node.projectPath };
                 }
-                return { type: 'project', project, solutionPath: undefined };
+                return this.projectParentNode(project);
             }
             case 'folder': {
                 const parentDir = path.dirname(node.relPath).replace(/\\/g, '/');
@@ -138,12 +157,12 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectNode>
                     return { type: 'folder', relPath: parentDir, projectPath: node.projectPath };
                 }
                 const project = this.allProjects.find(p => p.path === node.projectPath);
-                if (project) return { type: 'project', project, solutionPath: undefined };
+                if (project) return this.projectParentNode(project);
                 return undefined;
             }
             case 'refGroup': {
                 const project = this.allProjects.find(p => p.path === node.projectPath);
-                if (project) return { type: 'project', project, solutionPath: undefined };
+                if (project) return this.projectParentNode(project);
                 return undefined;
             }
             case 'refSubGroup':

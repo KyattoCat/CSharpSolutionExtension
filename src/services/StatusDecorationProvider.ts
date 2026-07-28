@@ -18,6 +18,8 @@ export class StatusDecorationProvider implements vscode.FileDecorationProvider {
     private rootPath: string = '';
     private enabled: boolean = false;
     private debounceTimer?: NodeJS.Timeout;
+    private refreshDebounceTimer?: NodeJS.Timeout;
+    private windowFocusDisposable?: vscode.Disposable;
 
     /** SVN 状态字符 → 主题色装饰（复用 VS Code 原生 Git 主题色，视觉一致） */
     private static readonly DECORATIONS: Record<string, vscode.FileDecoration> = {
@@ -61,16 +63,34 @@ export class StatusDecorationProvider implements vscode.FileDecorationProvider {
         this.enabled = false;
         this.statusMap.clear();
         this._onDidChange.fire(undefined);
+        if (this.windowFocusDisposable) {
+            this.windowFocusDisposable.dispose();
+            this.windowFocusDisposable = undefined;
+        }
     }
 
     /**
      * 启用 SVN 装饰并立即收集状态。
      * 之后通过 onFileChanged() 响应文件变更，防抖重新收集。
+     * 同时监听窗口焦点变化 — 用户从外部 SVN 工具（TortoiseSVN / 命令行）切回 VS Code 时自动刷新。
      */
     enable(rootPath: string, initialStatus: Map<string, string>): void {
         this.enabled = true;
         this.rootPath = rootPath;
         this.update(initialStatus);
+
+        // 窗口焦点监听：用户从外部 SVN 工具切回时自动刷新状态
+        if (!this.windowFocusDisposable) {
+            this.windowFocusDisposable = vscode.window.onDidChangeWindowState(state => {
+                if (state.focused && this.enabled && this.rootPath) {
+                    // 防抖 500ms — SVN 元数据可能在焦点回来前的一瞬间才写完
+                    if (this.refreshDebounceTimer) clearTimeout(this.refreshDebounceTimer);
+                    this.refreshDebounceTimer = setTimeout(() => {
+                        this.refreshFromDisk();
+                    }, 500);
+                }
+            });
+        }
     }
 
     /**
@@ -85,14 +105,19 @@ export class StatusDecorationProvider implements vscode.FileDecorationProvider {
         }, 2000);
     }
 
-    /** 重新执行 svn status 并更新装饰 */
-    private async refreshFromDisk(): Promise<void> {
+    /** 重新执行 svn status 并更新装饰（外部可调用以强制刷新） */
+    async refreshFromDisk(): Promise<void> {
         const fileStatuses = await SvnStatusService.getStatus(this.rootPath);
         this.update(fileStatuses);
     }
 
     dispose(): void {
         if (this.debounceTimer) clearTimeout(this.debounceTimer);
+        if (this.refreshDebounceTimer) clearTimeout(this.refreshDebounceTimer);
+        if (this.windowFocusDisposable) {
+            this.windowFocusDisposable.dispose();
+            this.windowFocusDisposable = undefined;
+        }
         this._onDidChange.dispose();
         this.statusMap.clear();
     }

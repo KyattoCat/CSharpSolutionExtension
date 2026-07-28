@@ -94,6 +94,16 @@ export function registerNavCommands(
                 allProjects: result.allProjects,
             });
             treeView.message = (!hasSolution && result.standaloneProjects.length === 0) ? '未发现 C# 项目' : undefined;
+
+            // 首次加载 / 刷新后，自动定位到当前活动文件
+            setTimeout(() => {
+                const editor = vscode.window.activeTextEditor;
+                if (editor?.document.uri.scheme !== 'file') return;
+                const node = treeProvider.findNodeByUri(editor.document.uri);
+                if (node) {
+                    treeView.reveal(node, { select: true, focus: false, expand: true });
+                }
+            }, 100);
         })
     );
 
@@ -205,11 +215,20 @@ export function registerNavCommands(
     );
 
     // --- 切换到本侧边栏时，根据当前打开的文件做一次 reveal ---
+    // 注意：不能用 revealActiveEditor()，因为此时 treeView.visible 属性可能尚未更新
+    // （VS Code API 时序问题 — visible 回调参数为 true 但属性 getter 仍为 false）。
     context.subscriptions.push(
         treeView.onDidChangeVisibility(({ visible }) => {
-            if (visible) {
-                revealActiveEditor();
-            }
+            if (!visible) return;
+            // 延迟一帧，确保树视图已完成渲染，否则 reveal 可能静默失败
+            setTimeout(() => {
+                const editor = vscode.window.activeTextEditor;
+                if (editor?.document.uri.scheme !== 'file') return;
+                const node = treeProvider.findNodeByUri(editor.document.uri);
+                if (node) {
+                    treeView.reveal(node, { select: true, focus: false, expand: true });
+                }
+            }, 50);
         })
     );
 }

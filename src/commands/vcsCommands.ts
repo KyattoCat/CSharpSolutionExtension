@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { ProjectNode } from '../models/ProjectNode';
 import { TortoiseService } from '../services/TortoiseService';
+import { StatusDecorationProvider } from '../services/StatusDecorationProvider';
 
 interface VcsCommandDef {
     vcs: 'svn' | 'git';
@@ -58,7 +59,7 @@ function resolveNodePath(node: ProjectNode): string | undefined {
 }
 
 /** Register TortoiseSVN / TortoiseGit right-click context menu commands */
-export function registerVcsCommands(context: vscode.ExtensionContext): void {
+export function registerVcsCommands(context: vscode.ExtensionContext, statusDecorationProvider: StatusDecorationProvider): void {
     for (const def of VCS_COMMANDS) {
         context.subscriptions.push(
             vscode.commands.registerCommand(`csharpsolution.${def.id}`, async (node: ProjectNode) => {
@@ -66,6 +67,12 @@ export function registerVcsCommands(context: vscode.ExtensionContext): void {
                 const filePath = resolveNodePath(node);
                 if (!filePath) return;
                 TortoiseService.execute(def.vcs, def.cmd, filePath);
+                // TortoiseProc 是外部 GUI 进程，命令执行后文件状态可能已变更。
+                // 通过 onFileChanged() 触发防抖刷新（2s 延迟），
+                // 同时窗口焦点监听会在用户切回 VS Code 时再次刷新。
+                if (def.vcs === 'svn') {
+                    statusDecorationProvider.onFileChanged();
+                }
             })
         );
     }

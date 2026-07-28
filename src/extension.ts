@@ -73,7 +73,7 @@ export function activate(context: vscode.ExtensionContext) {
     registerFileCommands(context, treeProvider, treeView);
     registerProjectCommands(context, treeProvider, buildConfigSvc);
     registerWatchers(context);
-    registerVcsCommands(context);
+    registerVcsCommands(context, statusDecorationProvider);
 
     // --- buildTool/msbuildPath 配置变更时重置 MSBuild 探测缓存 ---
     context.subscriptions.push(
