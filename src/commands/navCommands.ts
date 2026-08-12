@@ -8,8 +8,17 @@ import { ProjectDiscovery } from '../services/ProjectDiscovery';
 import { SvnStatusService } from '../services/SvnStatusService';
 import { StatusDecorationProvider } from '../services/StatusDecorationProvider';
 
-/** 当前选中的解决方案路径（模块级状态，跨 refresh 保持） */
+/** 记忆上次选中解决方案的 workspaceState key */
+const LAST_SOLUTION_KEY = 'lastSolutionPath';
+
+/** 当前选中的解决方案路径（模块级状态，跨 refresh 保持，并持久化到 workspaceState） */
 let currentSolutionPath: string | undefined;
+
+/** 更新当前选中的解决方案，并写回 workspaceState 以便下次打开工作区时恢复 */
+function setCurrentSolutionPath(context: vscode.ExtensionContext, solutionPath: string | undefined): void {
+    currentSolutionPath = solutionPath;
+    context.workspaceState.update(LAST_SOLUTION_KEY, solutionPath);
+}
 
 /** 弹出解决方案选择器，返回用户选中的方案路径；取消则返回 undefined */
 async function pickSolution(solutions: Solution[]): Promise<string | undefined> {
@@ -30,9 +39,9 @@ async function pickSolution(solutions: Solution[]): Promise<string | undefined> 
 }
 
 /** 根据选中的方案路径过滤方案列表。如未选中且存在多个，弹出选择器 */
-async function resolveSolutions(solutions: Solution[]): Promise<Solution[]> {
+async function resolveSolutions(solutions: Solution[], context: vscode.ExtensionContext): Promise<Solution[]> {
     if (solutions.length <= 1) {
-        currentSolutionPath = solutions[0]?.path;
+        setCurrentSolutionPath(context, solutions[0]?.path);
         return solutions;
     }
 
@@ -42,19 +51,19 @@ async function resolveSolutions(solutions: Solution[]): Promise<Solution[]> {
         if (stillExists) {
             return solutions.filter(s => s.path === currentSolutionPath);
         }
-        // 选中项已不存在，清除并重新选择
-        currentSolutionPath = undefined;
+        // 选中项已不存在，清除记忆并重新选择
+        setCurrentSolutionPath(context, undefined);
     }
 
     // 弹出选择器
     const picked = await pickSolution(solutions);
     if (picked) {
-        currentSolutionPath = picked;
+        setCurrentSolutionPath(context, picked);
         return solutions.filter(s => s.path === picked);
     }
 
     // 用户取消了选择，默认显示第一个（避免界面空白）
-    currentSolutionPath = solutions[0].path;
+    setCurrentSolutionPath(context, solutions[0].path);
     return solutions.slice(0, 1);
 }
 
@@ -65,6 +74,9 @@ export function registerNavCommands(
     treeView: vscode.TreeView<ProjectNode>,
     statusDecorationProvider: StatusDecorationProvider
 ): void {
+    // 读回上次打开的解决方案，多方案工作区重开时自动选中（不再弹选择器）
+    currentSolutionPath = context.workspaceState.get<string>(LAST_SOLUTION_KEY);
+
     // --- 刷新面板 ---
     context.subscriptions.push(
         vscode.commands.registerCommand('csharpsolution.refresh', async () => {
@@ -82,7 +94,7 @@ export function registerNavCommands(
             } else if (vcs !== 'svn') {
                 statusDecorationProvider.clear();
             }
-            const activeSolutions = await resolveSolutions(result.solutions);
+            const activeSolutions = await resolveSolutions(result.solutions, context);
             const hasSolution = activeSolutions.length > 0;
             // 有解决方案时只显示方案内的项目，不显示独立项目
             treeView.description = result.solutions.length > 1
@@ -119,7 +131,7 @@ export function registerNavCommands(
             }
             const picked = await pickSolution(result.solutions);
             if (picked) {
-                currentSolutionPath = picked;
+                setCurrentSolutionPath(context, picked);
             }
             // 切换后立即刷新（如果取消则保持当前选中）
             vscode.commands.executeCommand('csharpsolution.refresh');
