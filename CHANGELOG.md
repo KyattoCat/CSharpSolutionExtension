@@ -6,6 +6,11 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.9.9] - 2026-08-12
+
+### Added
+- 记住上次打开的解决方案 — 多方案工作区重开时自动选中上次使用的方案，不再弹出选择器；记忆失效（方案被移除）时自动回退到重新选择
+
 ## [1.9.8] - 2026-07-28
 
 ### Fixed
