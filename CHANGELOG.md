@@ -6,6 +6,9 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+### Fixed
+- 启动后首次切到「搜索」视图并开始输入时，侧边栏会被抢回项目管理面板 — 初次扫描完成后的自动定位在面板不可见时也会调用 `TreeView.reveal`，而 VS Code 会因此先显示该视图；现在定位前会检查面板可见性
+
 ## [1.9.9] - 2026-08-12
 
 ### Added

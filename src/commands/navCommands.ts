@@ -77,6 +77,37 @@ export function registerNavCommands(
     // 读回上次打开的解决方案，多方案工作区重开时自动选中（不再弹选择器）
     currentSolutionPath = context.workspaceState.get<string>(LAST_SOLUTION_KEY);
 
+    /**
+     * 把当前活动文件定位到树中。
+     *
+     * @param checkVisible 是否要求树视图当前可见。
+     *
+     * VS Code 的 `TreeView.reveal` 在视图不可见时会**先显示该视图**
+     * （vscode.d.ts: "If the tree view is not visible then the tree view is shown"）。
+     * 所以用户在别的视图（例如“搜索”）里操作时，任何一次 reveal 都会把侧边栏抢回
+     * 本扩展。启动后首次刷新可能耗时数秒，正好落在用户切到搜索并开始输入的时刻，
+     * 表现为“一输入就跳到插件页面”。
+     * 因此只有 `onDidChangeVisibility` 回调（此时 `treeView.visible` getter 尚未更新）
+     * 可以传 false，其余调用一律要求视图可见。
+     */
+    const revealActiveFile = (checkVisible: boolean): void => {
+        // 视图不可见时调用 reveal 会把侧边栏切回本扩展，因此这种情况下直接放弃定位
+        if (checkVisible && !treeView.visible) {
+            return;
+        }
+
+        const editor = vscode.window.activeTextEditor;
+        const uri = editor?.document.uri;
+        if (!uri || uri.scheme !== 'file') {
+            return;
+        }
+
+        const node = treeProvider.findNodeByUri(uri);
+        if (node) {
+            treeView.reveal(node, { select: true, focus: false, expand: true });
+        }
+    };
+
     // --- 刷新面板 ---
     context.subscriptions.push(
         vscode.commands.registerCommand('csharpsolution.refresh', async () => {
@@ -108,14 +139,8 @@ export function registerNavCommands(
             treeView.message = (!hasSolution && result.standaloneProjects.length === 0) ? '未发现 C# 项目' : undefined;
 
             // 首次加载 / 刷新后，自动定位到当前活动文件
-            setTimeout(() => {
-                const editor = vscode.window.activeTextEditor;
-                if (editor?.document.uri.scheme !== 'file') return;
-                const node = treeProvider.findNodeByUri(editor.document.uri);
-                if (node) {
-                    treeView.reveal(node, { select: true, focus: false, expand: true });
-                }
-            }, 100);
+            // 仅当本视图可见时才定位，避免把正在使用其它视图（如搜索）的用户抢过来
+            setTimeout(() => revealActiveFile(true), 100);
         })
     );
 
@@ -212,35 +237,18 @@ export function registerNavCommands(
     );
 
     // --- 切换标签页时自动选中对应文件节点（仅面板可见时生效） ---
-    const revealActiveEditor = () => {
-        const editor = vscode.window.activeTextEditor;
-        if (editor?.document.uri.scheme === 'file' && treeView.visible) {
-            const node = treeProvider.findNodeByUri(editor.document.uri);
-            if (node) {
-                treeView.reveal(node, { select: true, focus: false, expand: true });
-            }
-        }
-    };
-
     context.subscriptions.push(
-        vscode.window.onDidChangeActiveTextEditor(() => revealActiveEditor())
+        vscode.window.onDidChangeActiveTextEditor(() => revealActiveFile(true))
     );
 
     // --- 切换到本侧边栏时，根据当前打开的文件做一次 reveal ---
-    // 注意：不能用 revealActiveEditor()，因为此时 treeView.visible 属性可能尚未更新
+    // 注意：这里不能检查 treeView.visible —— 此时该 getter 可能尚未更新
     // （VS Code API 时序问题 — visible 回调参数为 true 但属性 getter 仍为 false）。
     context.subscriptions.push(
         treeView.onDidChangeVisibility(({ visible }) => {
             if (!visible) return;
             // 延迟一帧，确保树视图已完成渲染，否则 reveal 可能静默失败
-            setTimeout(() => {
-                const editor = vscode.window.activeTextEditor;
-                if (editor?.document.uri.scheme !== 'file') return;
-                const node = treeProvider.findNodeByUri(editor.document.uri);
-                if (node) {
-                    treeView.reveal(node, { select: true, focus: false, expand: true });
-                }
-            }, 50);
+            setTimeout(() => revealActiveFile(false), 50);
         })
     );
 }
