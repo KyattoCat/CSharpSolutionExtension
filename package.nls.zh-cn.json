@@ -60,5 +60,6 @@
   "config.defaultNamespace": "默认根命名空间（留空则使用项目名称作为命名空间）",
   "config.renameSyncCode": "重命名文件时自动更新 class/namespace 声明",
   "config.tortoiseSvnPath": "TortoiseSVN TortoiseProc.exe 完整路径（留空则自动探测）",
-  "config.tortoiseGitPath": "TortoiseGit TortoiseGitProc.exe 完整路径（留空则自动探测）"
+  "config.tortoiseGitPath": "TortoiseGit TortoiseGitProc.exe 完整路径（留空则自动探测）",
+  "command.openProjectProperties": "项目属性"
 }

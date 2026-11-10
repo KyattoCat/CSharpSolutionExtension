@@ -273,6 +273,11 @@
         "command": "csharpsolution.gitStash",
         "title": "%command.gitStash%",
         "category": "%category%"
+      },
+      {
+        "command": "csharpsolution.openProjectProperties",
+        "title": "%command.openProjectProperties%",
+        "category": "%category%"
       }
     ],
     "submenus": [
@@ -303,6 +308,11 @@
         }
       ],
       "view/item/context": [
+        {
+          "command": "csharpsolution.openProjectProperties",
+          "when": "view == csharpsolution-projects && (viewItem == project || viewItem == solutionProject)",
+          "group": "1_properties@1"
+        },
         {
           "submenu": "csharpsolution.addFileMenu",
           "when": "view == csharpsolution-projects && (viewItem == project || viewItem == solutionProject || viewItem == dirFolder)",
@@ -727,8 +737,8 @@
   },
   "scripts": {
     "vscode:prepublish": "pnpm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
+    "compile": "tsc -p ./ && tsc -p ./tsconfig.webview.json",
+    "watch": "tsc -p ./tsconfig.webview.json && tsc -watch -p ./",
     "pretest": "pnpm run compile && pnpm run lint",
     "lint": "eslint src --ext ts",
     "test": "vscode-test"

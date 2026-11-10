@@ -1,0 +1,14 @@
+{
+	"compilerOptions": {
+		"target": "ES2020",
+		"module": "none",
+		"lib": ["ES2020", "DOM"],
+		"outDir": "out/webview-ui",
+		"rootDir": "src/webview/ui",
+		"strict": true,
+		"types": [],
+		"sourceMap": false,
+		"noEmitOnError": true
+	},
+	"include": ["src/webview/ui/**/*.ts"]
+}

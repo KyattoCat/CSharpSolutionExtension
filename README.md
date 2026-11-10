@@ -29,6 +29,7 @@
 - **复制文件路径** — 右键文件 → 复制绝对路径到剪贴板
 - **新增项目** — 方案右键 → 选模板创建新项目并加入方案
 - **文件资源管理器** — 右键节点 → 在系统文件管理器中定位
+- **项目属性面板** — 右键项目 → 「项目属性」，可视化编辑 `TargetFramework`、`OutputType`、`AssemblyName`、`RootNamespace`、包信息、生成选项；支持 Debug/Release 条件组与 `PackageReference` / `ProjectReference` / 程序集引用 / 分析器的增删改；写入时只改目标行，注释与格式保持原样
 - **SDK 项目** — 支持 `<Project Sdk="...">` 格式，自动 glob 文件列表
 - **自动刷新** — 监听文件变化，面板自动更新
 

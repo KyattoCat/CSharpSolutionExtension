@@ -60,5 +60,6 @@
   "config.defaultNamespace": "Default root namespace (leave blank to use project name as namespace)",
   "config.renameSyncCode": "Automatically update class/namespace declarations when renaming files",
   "config.tortoiseSvnPath": "Full path to TortoiseSVN TortoiseProc.exe (leave blank for auto-detection)",
-  "config.tortoiseGitPath": "Full path to TortoiseGit TortoiseGitProc.exe (leave blank for auto-detection)"
+  "config.tortoiseGitPath": "Full path to TortoiseGit TortoiseGitProc.exe (leave blank for auto-detection)",
+  "command.openProjectProperties": "Project Properties"
 }

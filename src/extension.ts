@@ -6,6 +6,7 @@ import { DragDropController } from './tree/DragDropController';
 import { registerFileCommands } from './commands/fileCommands';
 import { registerProjectCommands } from './commands/projectCommands';
 import { registerNavCommands } from './commands/navCommands';
+import { registerPropertiesCommands } from './commands/propertiesCommands';
 import { registerWatchers } from './commands/watchers';
 import { registerVcsCommands } from './commands/vcsCommands';
 import { MsBuildLocator } from './services/MsBuildLocator';
@@ -70,6 +71,7 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     registerNavCommands(context, treeProvider, treeView, statusDecorationProvider);
+    registerPropertiesCommands(context, treeProvider);
     registerFileCommands(context, treeProvider, treeView);
     registerProjectCommands(context, treeProvider, buildConfigSvc);
     registerWatchers(context);
