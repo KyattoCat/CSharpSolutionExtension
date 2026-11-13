@@ -6,6 +6,9 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+### Changed
+- 新建类型的命名空间改为使用项目根命名空间（`RootNamespace` → 程序集名 → 项目名），不再拼接文件夹层级；输入框会显示将要使用的命名空间
+
 ## [1.10.0] - 2026-11-13
 
 ### Added

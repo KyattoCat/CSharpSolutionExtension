@@ -12,7 +12,7 @@
 - **解决方案支持** — 解析 `.sln` / `.slnx`，按方案组织项目
 - **记住上次解决方案** — 打开工作区时自动选中上次使用的方案，无需重复选择
 - **项目浏览** — 展开查看引用（项目引用、程序集引用、NuGet 包、分析器）和源文件目录树
-- **新增文件** — 右键「新增文件」子菜单：类 / 接口 / 枚举 / 结构体模板，自动注册到 `.csproj`
+- **新增文件** — 右键「新增文件」子菜单：类 / 接口 / 枚举 / 结构体模板，自动注册到 `.csproj`；命名空间取项目根命名空间（`RootNamespace` → 程序集名 → 项目名），不按目录层级拼接
 - **新建文件夹** — 传统项目写入 `<Folder>` 条目，空文件夹在树中可见（SDK 项目自动扫描空目录）
 - **从项目排除** — 移除 `.csproj` 条目但保留物理文件（SDK 项目写 `Compile Remove`）
 - **多选批量** — Ctrl 多选文件/文件夹批量删除、批量排除
@@ -47,7 +47,7 @@
 | `csharpsolution.tortoiseSvnPath` | `string` | `""` | TortoiseProc.exe 路径（SVN，留空自动探测） |
 | `csharpsolution.tortoiseGitPath` | `string` | `""` | TortoiseGitProc.exe 路径（Git，留空自动探测） |
 | `csharpsolution.excludePatterns` | `string[]` | `[]` | 额外的排除 glob 模式 |
-| `csharpsolution.defaultNamespace` | `string` | `""` | 默认根命名空间（留空使用项目名） |
+| `csharpsolution.defaultNamespace` | `string` | `""` | 根命名空间覆盖项（留空则用项目的 `RootNamespace`，其次程序集名、项目名） |
 | `csharpsolution.renameSyncCode` | `boolean` | `true` | 重命名时自动更新 class 声明 |
 
 ## 要求

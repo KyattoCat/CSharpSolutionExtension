@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import { CsprojSerializer } from '../serialization/CsprojSerializer';
 import { PackagesConfigSerializer } from '../serialization/PackagesConfigSerializer';
 import { FileTemplateService, TypeKind } from './FileTemplateService';
+import { MsBuildProperties } from './MsBuildProperties';
 
 export class CsprojService {
 
@@ -23,7 +24,31 @@ export class CsprojService {
     }
 
     /**
+     * 解析项目实际使用的根命名空间（新建类型时使用）：
+     * `<RootNamespace>` → `<AssemblyName>` → 项目文件名。
+     *
+     * 含 `$(...)` 的 MSBuild 变量/函数无法在扩展内求值，遇到时回退到下一来源，
+     * 避免把字面量 `$(MSBuildProjectName)` 写进源码。
+     */
+    static async resolveRootNamespace(projectPath: string): Promise<string> {
+        const fallback = path.basename(projectPath, '.csproj');
+        try {
+            const xml = await fs.promises.readFile(projectPath, 'utf-8');
+            for (const propertyName of ['RootNamespace', 'AssemblyName']) {
+                const value = MsBuildProperties.getEffective(xml, propertyName)?.value.trim();
+                if (value && !value.includes('$(')) {
+                    return value;
+                }
+            }
+        } catch {
+            // 项目文件不可读时用文件名兜底
+        }
+        return fallback;
+    }
+
+    /**
      * 通用新增类型：创建 .cs 文件（按 kind 生成内容）+ 注册 csproj（非 SDK 项目）。
+     * 命名空间直接使用根命名空间，不再拼接目录层级。
      */
     static async addType(
         projectPath: string,
@@ -50,8 +75,7 @@ export class CsprojService {
         }
 
         const namespace = rootNamespace || path.basename(projectPath, '.csproj');
-        const fullNs = FileTemplateService.inferNamespace(namespace, dirPath);
-        const content = FileTemplateService.generateByKind(fullNs, name, kind);
+        const content = FileTemplateService.generateByKind(namespace, name, kind);
 
         await fs.promises.mkdir(path.dirname(fileAbsPath), { recursive: true });
         await fs.promises.writeFile(fileAbsPath, content, 'utf-8');

@@ -57,7 +57,7 @@
   "config.msbuildPath": "Full path to msbuild.exe (leave blank for auto-detection via vswhere/PATH)",
   "config.vcs": "Version control system (SVN requires command-line tools)",
   "config.excludePatterns": "Additional exclude glob patterns (merged with default node_modules/bin/obj)",
-  "config.defaultNamespace": "Default root namespace (leave blank to use project name as namespace)",
+  "config.defaultNamespace": "Override for the root namespace of new files (leave blank to use the project's RootNamespace, then assembly name, then project name)",
   "config.renameSyncCode": "Automatically update class/namespace declarations when renaming files",
   "config.tortoiseSvnPath": "Full path to TortoiseSVN TortoiseProc.exe (leave blank for auto-detection)",
   "config.tortoiseGitPath": "Full path to TortoiseGit TortoiseGitProc.exe (leave blank for auto-detection)",

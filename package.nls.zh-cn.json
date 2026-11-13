@@ -57,7 +57,7 @@
   "config.msbuildPath": "msbuild.exe 完整路径（留空则通过 vswhere/PATH 自动探测）",
   "config.vcs": "版本控制系统（SVN 需要命令行工具）",
   "config.excludePatterns": "额外的排除 glob 模式（与默认的 node_modules/bin/obj 合并）",
-  "config.defaultNamespace": "默认根命名空间（留空则使用项目名称作为命名空间）",
+  "config.defaultNamespace": "新建文件的根命名空间覆盖项（留空则使用项目的 RootNamespace，其次程序集名、项目名）",
   "config.renameSyncCode": "重命名文件时自动更新 class/namespace 声明",
   "config.tortoiseSvnPath": "TortoiseSVN TortoiseProc.exe 完整路径（留空则自动探测）",
   "config.tortoiseGitPath": "TortoiseGit TortoiseGitProc.exe 完整路径（留空则自动探测）",

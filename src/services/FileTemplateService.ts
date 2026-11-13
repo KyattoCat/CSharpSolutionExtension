@@ -73,18 +73,6 @@ export class FileTemplateService {
     }
 
     /**
-     * 根据根命名空间和相对目录推断完整命名空间。
-     * 例: inferNamespace('MyApp', 'Models\\Entities') -> 'MyApp.Models.Entities'
-     */
-    static inferNamespace(rootNamespace: string, dirPath: string): string {
-        if (!dirPath) {
-            return rootNamespace;
-        }
-        const nsPart = dirPath.replace(/[\\\/]/g, '.');
-        return `${rootNamespace}.${nsPart}`;
-    }
-
-    /**
      * 验证类名是否合法。
      * 规则: 非空、首字符为字母或下划线、其余为字母数字下划线、不是 C# 关键字。
      */

@@ -23,10 +23,15 @@ export function registerFileCommands(
 
                 const projectPath = node.type === 'project' ? node.project.path : node.projectPath;
                 const dirPath = node.type === 'folder' ? node.relPath : '';
-                const projectName = path.basename(projectPath, '.csproj');
+
+                // 命名空间取项目根命名空间（设置项 > csproj RootNamespace > AssemblyName > 项目名），
+                // 不再按目录层级拼接 —— 与项目属性面板中的「根命名空间」保持一致
+                const config = vscode.workspace.getConfiguration('csharpsolution');
+                const configuredNamespace = (config.get<string>('defaultNamespace', '') || '').trim();
+                const rootNamespace = configuredNamespace || await CsprojService.resolveRootNamespace(projectPath);
 
                 const name = await vscode.window.showInputBox({
-                    prompt: `请输入${label}名`,
+                    prompt: `请输入${label}名（命名空间：${rootNamespace}）`,
                     placeHolder: kind === 'interface' ? 'INewInterface' : `New${kind.charAt(0).toUpperCase()}${kind.slice(1)}`,
                     validateInput: (value) => {
                         if (!FileTemplateService.isValidClassName(value)) {
@@ -42,9 +47,7 @@ export function registerFileCommands(
                 if (!name) return;
 
                 try {
-                    const config = vscode.workspace.getConfiguration('csharpsolution');
-                    const defaultNs = config.get<string>('defaultNamespace', '') || projectName;
-                    const fileUri = await CsprojService.addType(projectPath, dirPath, name, kind, defaultNs);
+                    const fileUri = await CsprojService.addType(projectPath, dirPath, name, kind, rootNamespace);
                     vscode.window.showInformationMessage(`已创建${label}: ${name}.cs`);
                     vscode.commands.executeCommand('csharpsolution.refresh');
                     await vscode.window.showTextDocument(fileUri);

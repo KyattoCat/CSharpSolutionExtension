@@ -50,12 +50,43 @@ suite('CsprojService', () => {
         assert.ok(csproj.includes('IFoo.cs'));
     });
 
-    test('addType 子目录推断命名空间', async () => {
+    test('addType 子目录中创建类型仍使用根命名空间', async () => {
         await fs.promises.mkdir(path.join(tmpDir, 'Models'), { recursive: true });
         await CsprojService.addType(projectPath, 'Models', 'Color', 'enum', 'My.App');
         const content = await fs.promises.readFile(path.join(tmpDir, 'Models', 'Color.cs'), 'utf-8');
-        assert.ok(content.includes('namespace My.App.Models'));
+        assert.ok(content.includes('namespace My.App'));
+        assert.ok(!content.includes('namespace My.App.Models'));
         assert.ok(content.includes('public enum Color'));
+    });
+
+    test('resolveRootNamespace 优先 RootNamespace，其次 AssemblyName，最后项目文件名', async () => {
+        await fs.promises.writeFile(projectPath, `<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Game.World</RootNamespace>
+    <AssemblyName>Game.World.Assembly</AssemblyName>
+  </PropertyGroup>
+</Project>`, 'utf-8');
+        assert.strictEqual(await CsprojService.resolveRootNamespace(projectPath), 'Game.World');
+
+        await fs.promises.writeFile(projectPath, `<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Game.World.Assembly</AssemblyName>
+  </PropertyGroup>
+</Project>`, 'utf-8');
+        assert.strictEqual(await CsprojService.resolveRootNamespace(projectPath), 'Game.World.Assembly');
+
+        await fs.promises.writeFile(projectPath, sdkCsproj, 'utf-8');
+        assert.strictEqual(await CsprojService.resolveRootNamespace(projectPath), 'Test');
+    });
+
+    test('resolveRootNamespace 跳过无法求值的 MSBuild 变量', async () => {
+        await fs.promises.writeFile(projectPath, `<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>$(MSBuildProjectName)</RootNamespace>
+    <AssemblyName>Real.Name</AssemblyName>
+  </PropertyGroup>
+</Project>`, 'utf-8');
+        assert.strictEqual(await CsprojService.resolveRootNamespace(projectPath), 'Real.Name');
     });
 
     test('addFolder 传统项目建目录并写 Folder 条目', async () => {

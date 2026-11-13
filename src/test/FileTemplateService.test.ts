@@ -21,16 +21,6 @@ suite('FileTemplateService', () => {
         assert.ok(result.includes('public class User'));
     });
 
-    test('推断命名空间：根命名空间 + 子目录', () => {
-        const ns = FileTemplateService.inferNamespace('MyApp', 'Models\\Entities');
-        assert.strictEqual(ns, 'MyApp.Models.Entities');
-    });
-
-    test('推断命名空间：仅有根命名空间（根目录）', () => {
-        const ns = FileTemplateService.inferNamespace('MyApp', '');
-        assert.strictEqual(ns, 'MyApp');
-    });
-
     test('验证合法类名', () => {
         assert.ok(FileTemplateService.isValidClassName('User'));
         assert.ok(FileTemplateService.isValidClassName('_MyClass'));
