@@ -6,6 +6,8 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-11-13
+
 ### Added
 - 项目属性面板 — 右键项目节点打开 Webview 界面，可视化编辑项目属性、按 Debug/Release 条件组写入、管理 NuGet 包 / 项目引用 / 程序集引用 / 分析器；写回 csproj 时只改目标行，保留注释与格式，依赖 VS Code 的撤销与保存
 
